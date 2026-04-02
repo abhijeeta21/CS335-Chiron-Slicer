@@ -74,6 +74,11 @@ class tlangVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by tlangParser#colorCommand.
+    def visitColorCommand(self, ctx:tlangParser.ColorCommandContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by tlangParser#pauseCommand.
     def visitPauseCommand(self, ctx:tlangParser.PauseCommandContext):
         return self.visitChildren(ctx)

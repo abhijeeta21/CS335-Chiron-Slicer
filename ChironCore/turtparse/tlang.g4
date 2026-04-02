@@ -17,6 +17,7 @@ instruction : assignment
 	    | penCommand
 	    | gotoCommand
 	    | pauseCommand
+		| colorCommand
 	    ;
 
 conditional : ifConditional | ifElseConditional ;
@@ -36,6 +37,8 @@ moveCommand : moveOp expression ;
 moveOp : 'forward' | 'backward' | 'left' | 'right' ;
 
 penCommand : 'penup' | 'pendown' ;
+
+colorCommand : 'color' STRING ;
 
 pauseCommand : 'pause' ;
 
@@ -94,5 +97,6 @@ NUM  : [0-9]+        ;
 VAR  : ':'[a-zA-Z_] [a-zA-Z0-9]* ;
 
 NAME : [a-zA-Z]+     ;
+STRING : '"' ~["]* '"' ;
 
 Whitespace: [ \t\n\r]+ -> skip;

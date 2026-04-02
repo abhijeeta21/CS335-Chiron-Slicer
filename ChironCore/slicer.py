@@ -100,51 +100,55 @@ class ChironSlicer:
         return pdg
 
 
-    def get_backward_slice(self, target_line, target_var=None):
+    def get_backward_slice(self, target_line, target_var=None, dynamic_trace=None):
+        """
+        Walks BACKWARDS up the PDG. 
+        If dynamic_trace (set of executed IR indices) is provided, 
+        it performs DYNAMIC SLICING by ignoring unexecuted paths.
+        """
         if target_line not in self.pdg:
             return []
         
-        # 1. Statement-Level Slice (Fallback)
+        # Determine ancestors based on Statement or Criterion level
         if not target_var:
             slice_nodes = nx.ancestors(self.pdg, target_line)
-            slice_nodes.add(target_line)
-            return sorted(list(slice_nodes))
-
-        # 2. Variable-Level (Criterion) Slice
-        stmt = self.irHandler.ir[target_line][0]
-        if target_var not in str(stmt):
-            # Fetch the original source line number!
-            source_line = getattr(stmt, 'sl', target_line)
-            print(f"\n[Error] Variable '{target_var}' is not used or defined on Source Line {source_line}.")
-            return []
-
-        immediate_preds = set()
-        
-        # Check if our target_var is being DEFINED on this line (LHS)
-        is_definition = isinstance(stmt, ChironAST.AssignmentCommand) and stmt.lvar.varname == target_var
-
-        for u, v, data in self.pdg.in_edges(target_line, data=True):
-            edge_type = data.get('edge_type')
-            label = data.get('label')
+        else:
+            stmt = self.irHandler.ir[target_line][0]
+            if target_var not in str(stmt):
+                source_line = getattr(stmt, 'sl', target_line)
+                print(f"\n[Error] Variable '{target_var}' is not used or defined on Source Line {source_line}.")
+                return []
             
-            if edge_type == 'control':
-                immediate_preds.add(u)
-            elif edge_type == 'data':
-                # If this line DEFINES our target, we need all incoming ingredients
-                if is_definition:
-                    immediate_preds.add(u)
-                # If this line only USES our target, strictly follow the target's edge
-                elif label == target_var:
-                    immediate_preds.add(u)
+            immediate_preds = set()
+            is_definition = isinstance(stmt, ChironAST.AssignmentCommand) and stmt.lvar.varname == target_var
 
-        # Grab all ancestors of the filtered predecessors
-        slice_nodes = set(immediate_preds)
-        for pred in immediate_preds:
-            slice_nodes.update(nx.ancestors(self.pdg, pred))
-            
-        slice_nodes.add(target_line) 
+            for u, v, data in self.pdg.in_edges(target_line, data=True):
+                edge_type, label = data.get('edge_type'), data.get('label')
+                if edge_type == 'control':
+                    immediate_preds.add(u)
+                elif edge_type == 'data':
+                    if is_definition or label == target_var:
+                        immediate_preds.add(u)
+
+            slice_nodes = set(immediate_preds)
+            for pred in immediate_preds:
+                slice_nodes.update(nx.ancestors(self.pdg, pred))
         
+        slice_nodes.add(target_line)
+        
+        # --- FEATURE 1: DYNAMIC SLICING FILTER ---
+        if dynamic_trace is not None:
+            slice_nodes = {n for n in slice_nodes if n in dynamic_trace}
+            
         return sorted(list(slice_nodes))
+
+    def get_union_slice(self, target_lines, dynamic_trace=None):
+        """ Used for Color Slicing and Dead Code Calculation. 
+            Takes a list of IR lines and returns the union of their backward slices."""
+        union_slice = set()
+        for line in target_lines:
+            union_slice.update(self.get_backward_slice(line, dynamic_trace=dynamic_trace))
+        return sorted(list(union_slice))
 
 
     def get_forward_slice(self, target_line):

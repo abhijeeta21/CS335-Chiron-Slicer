@@ -49,6 +49,9 @@ class Interpreter:
     def handlePen(self, stmt, tgt):
         raise NotImplementedError('Pens are not handled!')
 
+    def handleColorCommand(self, stmt, tgt):
+        raise NotImplementedError('Colors are not handled!')
+
     def handleGotoCommand(self, stmt, tgt):
         raise NotImplementedError('Gotos are not handled!')
 
@@ -103,6 +106,8 @@ class ConcreteInterpreter(Interpreter):
             ntgt = self.handleMove(stmt, tgt)
         elif isinstance(stmt, ChironAST.PenCommand):
             ntgt = self.handlePen(stmt, tgt)
+        elif isinstance(stmt, ChironAST.ColorCommand):
+            ntgt = self.handleColorCommand(stmt, tgt)
         elif isinstance(stmt, ChironAST.GotoCommand):
             ntgt = self.handleGotoCommand(stmt, tgt)
         elif isinstance(stmt, ChironAST.NoOpCommand):
@@ -156,6 +161,12 @@ class ConcreteInterpreter(Interpreter):
     def handlePen(self, stmt, tgt):
         print("  PenCommand")
         exec("self.trtl.%s()"%(stmt.status))
+        return 1
+
+    def handleColorCommand(self, stmt, tgt):
+        print("  ColorCommand")
+        # Python's turtle natively accepts the string (e.g., 'red')!
+        self.trtl.pencolor(stmt.color)
         return 1
 
     def handleGotoCommand(self, stmt, tgt):

@@ -27,7 +27,7 @@ def get_used_vars(ast_node):
     elif isinstance(ast_node, ChironAST.ConditionCommand):
         return get_used_vars(ast_node.cond)
     elif isinstance(ast_node, ChironAST.MoveCommand):
-        return get_used_vars(ast_node.expr)
+        return get_used_vars(ast_node.expr) + [":__pen_color"]
     elif isinstance(ast_node, ChironAST.GotoCommand):
         return get_used_vars(ast_node.xcor) + get_used_vars(ast_node.ycor)
     
@@ -78,6 +78,10 @@ class MovementTransferFunction(TransferFunction):
                 varName = stmt.lvar.varname
                 # KILL previous definitions, GEN this new line number
                 outState[varName] = MovementDomain({ir_idx})
+                
+            elif isinstance(stmt, ChironAST.ColorCommand):
+                # Treat changing colors as assigning a value to our implicit state
+                outState[":__pen_color"] = MovementDomain({ir_idx})
 
         if len(currBB.instrlist) > 0 and isinstance(currBB.instrlist[-1][0], ChironAST.ConditionCommand):
             return [outState, outState]

@@ -12,6 +12,17 @@ class Instruction(AST):
     pass
 
 
+class ColorCommand(Instruction):
+    def __init__(self, color_name):
+        self.color = color_name
+
+    def __str__(self):
+        # We add the quotes back just for the visual IR printout!
+        return f'color "{self.color}"'
+
+    def __str__(self):
+        return "color " + self.color
+
 class AssignmentCommand(Instruction):
     def __init__(self, leftvar, rexpr):
         self.lvar = leftvar

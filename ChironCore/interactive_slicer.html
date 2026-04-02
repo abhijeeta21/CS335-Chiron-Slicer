@@ -3,94 +3,122 @@
     <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Chiron-Slice: Interactive Traceability Dashboard</title>
+        <title>Chiron-Slice: Advanced Visual Debugger</title>
         <style>
-            body { background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', Courier, monospace; display: flex; height: 100vh; margin: 0; }
-            #canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background-color: #2d2d2d; border-right: 2px solid #444; }
+            body { background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', monospace; display: flex; height: 100vh; margin: 0; }
+            #canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background-color: #2d2d2d; border-right: 2px solid #444; position: relative; }
             #code-container { flex: 1; padding: 20px; overflow-y: auto; font-size: 16px; line-height: 1.5; }
-            svg { background-color: #1e1e1e; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transform: scaleY(-1); }
-            .code-line { padding: 4px 8px; border-radius: 4px; border-left: 4px solid transparent; cursor: pointer; transition: background 0.2s; }
-            .code-line:hover { background-color: #333; }
-            .line-num { color: #858585; display: inline-block; width: 30px; border-right: 1px solid #555; margin-right: 10px; }
-            .turtle-stroke { cursor: pointer; transition: stroke 0.2s, stroke-width 0.2s; }
-            .turtle-stroke:hover { stroke: #60a5fa; stroke-width: 6; }
+            svg { background-color: #1e1e1e; border-radius: 8px; }
             
-            /* CSS for highlighting the target vs the slice dependencies */
-            .highlight-target { background-color: #3f3f46; border-left-color: #60a5fa; font-weight: bold; color: #fff; }
-            .highlight-slice { background-color: #27272a; border-left-color: #f59e0b; }
-            .stroke-active { stroke: #f59e0b; stroke-width: 6; }
+            .code-line { padding: 4px 8px; border-radius: 4px; border-left: 4px solid transparent; cursor: pointer; transition: background 0.2s, opacity 0.2s; }
+            .line-num { color: #858585; display: inline-block; width: 30px; border-right: 1px solid #555; margin-right: 10px; }
+            .turtle-stroke:hover { stroke-width: 6; cursor: pointer; }
+            
+            /* Highlighting Logic */
+            .highlight-target { background-color: #3f3f46; border-left-color: #60a5fa; font-weight: bold; color: #fff; opacity: 1 !important; }
+            .highlight-slice { background-color: #27272a; border-left-color: #f59e0b; opacity: 1 !important; }
+            /* Modern Dead Code Styling */
+            .dead-code {
+                color: #6b7280; /* Dim the code text instead of using global opacity */
+                font-style: italic;
+            }
+            .dead-code::after { 
+                content: "DEAD CODE"; 
+                font-family: sans-serif;
+                font-size: 11px; 
+                font-weight: 700;
+                color: #fca5a5; /* Bright pastel red for high contrast */
+                background-color: #451a1a; /* Dark red badge background */
+                border: 1px solid #7f1d1d;
+                padding: 2px 8px; 
+                border-radius: 12px; /* Pill-shaped badge */
+                margin-left: 15px; 
+                font-style: normal;
+                letter-spacing: 0.5px;
+            }
+            
+            /* Toggle Switch UI */
+            .controls { background: #333; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+            select { background: #1e1e1e; color: #fff; border: 1px solid #555; padding: 5px 10px; border-radius: 4px; font-family: inherit; cursor: pointer; }
         </style>
     </head>
     <body>
-        <div id="canvas-container">
-            <svg width="600" height="600">
-        <line x1="300.0" y1="300.0" x2="350.0" y2="300.0" 
+        <div id="canvas-container"><svg width="600" height="600">
+        <line x1="300.0" y1="300.0" x2="323.0" y2="300.0" 
               stroke="#4ade80" stroke-width="4" stroke-linecap="round"
               class="turtle-stroke" 
-              onclick='highlightSlice(3, [1, 3])' 
-              data-line="3">
-        </line>
-        <line x1="350.0" y1="300.0" x2="350.0" y2="350.0" 
-              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
-              class="turtle-stroke" 
-              onclick='highlightSlice(5, [1, 5])' 
-              data-line="5">
-        </line>
-        <line x1="350.0" y1="350.0" x2="300.0" y2="350.0" 
-              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
-              class="turtle-stroke" 
-              onclick='highlightSlice(7, [1, 7])' 
-              data-line="7">
-        </line>
-        <line x1="300.0" y1="350.0" x2="300.0" y2="300.0" 
-              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
-              class="turtle-stroke" 
-              onclick='highlightSlice(9, [1, 9])' 
+              onclick='loadSlices(9, [1, 3, 4, 6, 8, 9], [1, 3, 4, 8, 9])' 
               data-line="9">
-        </line></svg>
-        </div>
+        </line></svg></div>
         <div id="code-container">
-            <h2 style="color: #60a5fa; margin-top: 0;">Chiron Source Code Viewer</h2>
-            <p style="color: #9ca3af; font-size: 14px;">Click on a graphical stroke on the left to view its complete backward slice.</p>
-            <div id="code-line-1" class="code-line"><span class="line-num">01</span> :size = 50</div>
-<div id="code-line-2" class="code-line"><span class="line-num">02</span> pendown</div>
-<div id="code-line-3" class="code-line"><span class="line-num">03</span> forward :size</div>
-<div id="code-line-4" class="code-line"><span class="line-num">04</span> right 90</div>
-<div id="code-line-5" class="code-line"><span class="line-num">05</span> forward :size</div>
-<div id="code-line-6" class="code-line"><span class="line-num">06</span> right 90</div>
-<div id="code-line-7" class="code-line"><span class="line-num">07</span> forward :size</div>
-<div id="code-line-8" class="code-line"><span class="line-num">08</span> right 90</div>
-<div id="code-line-9" class="code-line"><span class="line-num">09</span> forward :size</div>
+            <h2 style="color: #60a5fa; margin-top: 0;">Chiron Semantic Debugger</h2>
+            
+            <div class="controls">
+                <span><strong>Slicing Engine:</strong></span>
+                <select id="sliceMode" onchange="renderCurrentSlice()">
+                    <option value="dynamic">Dynamic (Exact Execution Path)</option>
+                    <option value="static">Static (Conservative / All Paths)</option>
+                </select>
+            </div>
+
+            <div id="code-line-1" class="code-line"><span class="line-num">01</span> :x = 50</div>
+<div id="code-line-2" class="code-line"><span class="line-num">02</span> :y = 100</div>
+<div id="code-line-3" class="code-line"><span class="line-num">03</span> if (:x > 10) [</div>
+<div id="code-line-4" class="code-line"><span class="line-num">04</span> :z = 20</div>
+<div id="code-line-5" class="code-line"><span class="line-num">05</span> ] else [</div>
+<div id="code-line-6" class="code-line"><span class="line-num">06</span> :z = 10</div>
+<div id="code-line-7" class="code-line"><span class="line-num">07</span> ]</div>
+<div id="code-line-8" class="code-line"><span class="line-num">08</span> :p = 3</div>
+<div id="code-line-9" class="code-line"><span class="line-num">09</span> forward :z + :p</div>
 
         </div>
         <script>
-            function highlightSlice(targetLine, sliceArray) {
-                // 1. Remove previous highlights
-                document.querySelectorAll('.code-line').forEach(el => {
-                    el.classList.remove('highlight-target', 'highlight-slice');
-                });
-                document.querySelectorAll('.turtle-stroke').forEach(el => el.classList.remove('stroke-active'));
+            // State variables to remember what the user clicked
+            let currentTarget = null;
+            let currentStaticSlice = [];
+            let currentDynamicSlice = [];
 
-                // 2. Highlight the specific line that triggered the movement (Blue)
-                const targetDiv = document.getElementById('code-line-' + targetLine);
-                if (targetDiv) {
-                    targetDiv.classList.add('highlight-target');
-                    targetDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+            // Dim dead code on load
+            const deadLines = [2, 6];
+            deadLines.forEach(line => {
+                let el = document.getElementById('code-line-' + line);
+                if(el) el.classList.add('dead-code');
+            });
 
-                // 3. Highlight all upstream dependencies (Orange)
-                sliceArray.forEach(lineNum => {
-                    if (lineNum !== targetLine) {
+            // Triggered when a stroke is clicked
+            function loadSlices(targetLine, staticArr, dynamicArr) {
+                currentTarget = targetLine;
+                currentStaticSlice = staticArr;
+                currentDynamicSlice = dynamicArr;
+                
+                // Highlight the SVG stroke
+                document.querySelectorAll('.turtle-stroke').forEach(el => el.style.strokeWidth = "4");
+                document.querySelector(`.turtle-stroke[data-line="${targetLine}"]`).style.strokeWidth = "8";
+                
+                renderCurrentSlice();
+            }
+
+            // Triggers when a stroke is clicked OR the dropdown is changed
+            function renderCurrentSlice() {
+                if (!currentTarget) return;
+
+                // 1. Clear old highlights
+                document.querySelectorAll('.code-line').forEach(el => el.classList.remove('highlight-target', 'highlight-slice'));
+                
+                // 2. Highlight target
+                const targetDiv = document.getElementById('code-line-' + currentTarget);
+                if (targetDiv) targetDiv.classList.add('highlight-target');
+
+                // 3. Determine which array to use based on the dropdown
+                const mode = document.getElementById('sliceMode').value;
+                const activeSlice = mode === 'dynamic' ? currentDynamicSlice : currentStaticSlice;
+
+                // 4. Paint the active slice
+                activeSlice.forEach(lineNum => {
+                    if (lineNum !== currentTarget) {
                         const sliceDiv = document.getElementById('code-line-' + lineNum);
-                        if (sliceDiv) {
-                            sliceDiv.classList.add('highlight-slice');
-                        }
+                        if (sliceDiv) sliceDiv.classList.add('highlight-slice');
                     }
-                });
-
-                // 4. Highlight the clicked SVG stroke
-                document.querySelectorAll(`.turtle-stroke[data-line="${targetLine}"]`).forEach(el => {
-                    el.classList.add('stroke-active');
                 });
             }
         </script>

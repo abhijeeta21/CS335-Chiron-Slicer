@@ -204,6 +204,8 @@ if __name__ == "__main__":
     cmdparser.add_argument("--forward-slice-var", help="Variable to track downstream (taint analysis)", type=str)
     cmdparser.add_argument("--html", action="store_true", help="Generate Interactive HTML Dashboard mapping UI to Code")
     cmdparser.add_argument("--plot-graphs", action="store_true", help="Generate PNG images of the DDG, CDG, and PDG") # <-- ADD THIS
+    cmdparser.add_argument("--extract-color", help="Extract a sub-program that only draws a specific color", type=str)
+    cmdparser.add_argument("--dynamic", action="store_true", help="Use dynamic execution trace for slicing instead of static")
     # -----------------------------------------------
 
     args = cmdparser.parse_args()
@@ -251,6 +253,35 @@ if __name__ == "__main__":
         irHandler.pretty_print(irHandler.ir)
 
     # ==========================================================
+    # --- PHASE 2: SEMANTIC COLOR EXTRACTION ---
+    # ==========================================================
+    if args.extract_color:
+        print(f"\n[COLOR EXTRACT] Extracting the '{args.extract_color}' sub-program...")
+        import html_tracer
+        tracer = html_tracer.HeadlessTracer(irHandler, args.params)
+        tracer.run() # Run dynamic trace to find color bindings
+        
+        # Find every MoveCommand that happened while the pen was this color
+        color_ir_pcs = [stroke['ir_pc'] for stroke in tracer.trace_log if stroke['color'] == args.extract_color]
+        
+        if not color_ir_pcs:
+            print(f"No shapes were drawn in {args.extract_color}.")
+        else:
+            slicer = ChironSlicer(irHandler)
+            # Slice backward from ALL of those movements simultaneously, dynamically!
+            color_slice_ir = slicer.get_union_slice(color_ir_pcs, dynamic_trace=tracer.execution_path)
+            
+            source_lines = sorted(list(set(getattr(irHandler.ir[i][0], 'sl', -1) for i in color_slice_ir)))
+            source_lines = [l for l in source_lines if l != -1]
+            
+            print(f"\n--- Resulting Semantic Sub-Program (Original Lines: {len(source_lines)}) ---")
+            with open(args.progfl, 'r') as f:
+                raw_code = f.readlines()
+            for s_line in source_lines:
+                actual_text = raw_code[s_line - 1].strip() if s_line <= len(raw_code) else "<hidden>"
+                print(f"[Line {s_line:02d}] : {actual_text}")
+
+    # ==========================================================
     # --- PHASE 2: STATIC SLICING EXECUTION ---
     # ==========================================================
     
@@ -279,8 +310,16 @@ if __name__ == "__main__":
             slicer = ChironSlicer(irHandler)
             target_idx = target_ir_indices[0] 
             
-            # If args.slice_var is None, our slicer automatically falls back to Mode 2!
-            backward_slice_ir = slicer.get_backward_slice(target_idx, args.slice_var)
+            dynamic_trace = None
+            if args.dynamic:
+                # We must run the program to get the exact dynamic trace!
+                import html_tracer
+                tracer = html_tracer.HeadlessTracer(irHandler, args.params)
+                tracer.run()
+                dynamic_trace = tracer.execution_path
+            
+            # Pass the trace (or None if static) into the slicer
+            backward_slice_ir = slicer.get_backward_slice(target_idx, args.slice_var, dynamic_trace=dynamic_trace)
             
             if backward_slice_ir:
                 source_lines = sorted(list(set(getattr(irHandler.ir[i][0], 'sl', -1) for i in backward_slice_ir)))

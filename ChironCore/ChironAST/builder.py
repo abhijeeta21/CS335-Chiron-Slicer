@@ -191,3 +191,12 @@ class astGenPass(tlangVisitor):
         cmd = ChironAST.PenCommand(ctx.getText())
         cmd.sl = ctx.start.line
         return [(cmd, 1)]
+
+    def visitColorCommand(self, ctx:tlangParser.ColorCommandContext):
+            # ctx.STRING().getText() returns '"red"'
+            # .strip('"') turns it into pure 'red'
+            clean_color = ctx.STRING().getText().strip('"') 
+            
+            cmd = ChironAST.ColorCommand(clean_color)
+            cmd.sl = ctx.start.line
+            return [(cmd, 1)]
