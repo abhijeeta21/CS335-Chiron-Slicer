@@ -1,127 +1,167 @@
 import copy
-import math
 import sys
-from typing import overload
+import networkx as nx
 
 sys.path.insert(0, "../ChironCore/")
 
 import cfg.ChironCFG as cfgK
 import cfg.cfgBuilder as cfgB
-from lattice import  *
+from lattice import *
 import ChironAST.ChironAST as ChironAST
 import dataFlowAnalysis as DFA
 
 
-'''
-    Class to work with lattice elements.
-    Implement these functions as required.
-'''
+# --- Helper Function to Extract Used Variables ---
+def get_used_vars(ast_node):
+    """Recursively finds all variables read within an AST node."""
+    if isinstance(ast_node, ChironAST.Var):
+        return [ast_node.varname]
+    elif isinstance(ast_node, (ChironAST.Num, ChironAST.BoolTrue, ChironAST.BoolFalse, ChironAST.PenStatus, ChironAST.NoOpCommand, ChironAST.PauseCommand, ChironAST.PenCommand)):
+        return []
+    elif isinstance(ast_node, (ChironAST.BinArithOp, ChironAST.BinCondOp)):
+        return get_used_vars(ast_node.lexpr) + get_used_vars(ast_node.rexpr)
+    elif isinstance(ast_node, (ChironAST.UnaryArithOp, ChironAST.NOT)):
+        return get_used_vars(ast_node.expr)
+    elif isinstance(ast_node, ChironAST.AssignmentCommand):
+        return get_used_vars(ast_node.rexpr)
+    elif isinstance(ast_node, ChironAST.ConditionCommand):
+        return get_used_vars(ast_node.cond)
+    elif isinstance(ast_node, ChironAST.MoveCommand):
+        return get_used_vars(ast_node.expr)
+    elif isinstance(ast_node, ChironAST.GotoCommand):
+        return get_used_vars(ast_node.xcor) + get_used_vars(ast_node.ycor)
+    
+    return []
+
+
 class MovementDomain(Lattice):
+    '''Initialize lattice value to hold a set of IR line numbers (Reaching Definitions)'''
+    def __init__(self, data=None):
+        if data is None:
+            self.data = set()
+        else:
+            self.data = set(data)
 
-    '''Initialize lattice value'''
-    def __init__(self, data):
-        pass
-
-    '''To display lattice values'''
     def __str__(self):
-        pass
+        return str(self.data)
 
-    '''To check whether lattice value is bot or not'''
     def isBot(self):
-        pass
+        return len(self.data) == 0
 
-    '''To check whether lattice value is Top or not'''
     def isTop(self):
-        pass
+        return False 
 
-    '''Implement the meet operator'''
     def meet(self, other):
-        pass
+        # Meet is Set UNION for Reaching Definitions
+        return MovementDomain(self.data.union(other.data))
 
-    '''Implement the join operator'''
     def join(self, other):
-        pass
+        return MovementDomain(self.data.intersection(other.data))
 
-    '''partial order with the other lattice value'''
     def __le__(self, other):
-        pass
+        return self.data.issubset(other.data)
 
-    '''equality check with other lattice value'''
     def __eq__(self, other):
-        pass
-
-    '''
-        Add here required lattice operations
-    '''
-    pass
+        return self.data == other.data
 
 
 class MovementTransferFunction(TransferFunction):
-    def __init__(self):
-        pass
-
     def transferFunction(self, currBBIN, currBB):
-        '''
-            Transfer function for basic block 'currBB'
-            args: In val for currBB, currBB
-            Returns newly calculated values in a form of list
+        # Deep copy IN state to start computing OUT state
+        outState = {}
+        for var, dom in currBBIN.items():
+            outState[var] = MovementDomain(dom.data)
 
-            This is the transfer function you write for DataFlow Analysis.
-        '''
-        #implement your transfer function here
-        outVal = []
-        return outVal
+        # Step through each instruction in the basic block
+        for stmt, ir_idx in currBB.instrlist:
+            if isinstance(stmt, ChironAST.AssignmentCommand):
+                varName = stmt.lvar.varname
+                # KILL previous definitions, GEN this new line number
+                outState[varName] = MovementDomain({ir_idx})
+
+        if len(currBB.instrlist) > 0 and isinstance(currBB.instrlist[-1][0], ChironAST.ConditionCommand):
+            return [outState, outState]
+        
+        return [outState]
+
 
 class ForwardAnalysis():
     def __init__(self):
         self.transferFunctionInstance = MovementTransferFunction()
         self.type = "MoveTF"
 
-    '''
-        This function is to initialize in of the basic block currBB
-        Returns a dictionary of {varName -> MovementDomain values}
-        isStartNode is a flag for stating whether currBB is start basic block or not
-    '''
     def initialize(self, currBB, isStartNode):
-        val = {}
-        #Your additional initialisation code if any
-        return val
+        return {}
 
-    # just a dummy equallity check function for dictionary
     def isEqual(self, dA, dB):
+        if set(dA.keys()) != set(dB.keys()):
+            return False
         for i in dA.keys():
-            if i not in dB.keys():
-                return False
             if dA[i] != dB[i]:
                 return False
         return True
 
-    '''
-        Define the meet operation.
-        Implement this function as required.
-        Returns a dictionary of {varName -> MovementDomain values}
-    '''
     def meet(self, predList):
         assert isinstance(predList, list)
         meetVal = {}
 
+        for predDict in predList:
+            for var, dom in predDict.items():
+                if var not in meetVal:
+                    meetVal[var] = MovementDomain(dom.data)
+                else:
+                    meetVal[var] = meetVal[var].meet(dom)
+                    
         return meetVal
+
 
 def optimizeUsingDFA(irHandler):
     '''
-        get the cfg out of IR
-        each basic block consists of single statement
+        Re-purposing DFA to build the Data Dependence Graph (DDG)
     '''
-    # call worklist and get the in/out values of each basic block
     dfaIntrp = DFA.DataFlowAnalysis(irHandler)
+    
+    # --- CRITICAL BUG FIX ---
+    # The parent class AbstractInterpreter instantiates the wrong AI engine
+    # by default. We MUST force it to use our Reaching Definitions engine here.
+    dfaIntrp.analysis = ForwardAnalysis()
+    # ------------------------
+    
     bbIn, bbOut = dfaIntrp.worklistAlgorithm(irHandler.cfg)
 
+    print("\n--- Building Data Dependence Graph (DDG) ---")
+    
+    ddg = nx.DiGraph()
+    for i in range(len(irHandler.ir)):
+        ddg.add_node(i)
 
-    # NOTE: Implement your code below. Do not change anything above this line.
-    # Implement your analysis according to the questions on each basic block
+    # Re-simulate block by block to catch instruction-level Def-Use chains
+    for bb in irHandler.cfg.nodes():
+        if bb.name == "START" or bb.name == "END":
+            continue
+            
+        currentState = {}
+        if bb.name in bbIn:
+            for var, dom in bbIn[bb.name].items():
+                currentState[var] = MovementDomain(dom.data)
 
+        for stmt, current_idx in bb.instrlist:
+            
+            # 1. Identify what variables are USED here
+            used_vars = get_used_vars(stmt)
+            for var in used_vars:
+                if var in currentState:
+                    # Draw an edge from where it was DEFINED to where it is USED
+                    for def_idx in currentState[var].data:
+                        ddg.add_edge(def_idx, current_idx, label=var)
 
+            # 2. Update state if this is a definition
+            if isinstance(stmt, ChironAST.AssignmentCommand):
+                varName = stmt.lvar.varname
+                currentState[varName] = MovementDomain({current_idx})
 
-    # TODO: Return the optimized IR in optIR
+    irHandler.ddg = ddg
+    print(f"DDG Built with {ddg.number_of_nodes()} nodes and {ddg.number_of_edges()} data dependency edges.\n")
+
     optIR = irHandler.ir
     return optIR
