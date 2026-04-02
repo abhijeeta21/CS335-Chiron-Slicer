@@ -15,7 +15,7 @@ class Interpreter:
     t_screen = None
     trtl = None
 
-    def __init__(self, irHandler, params):
+    def __init__(self, irHandler, params=None):
         self.ir = irHandler.ir
         self.cfg = irHandler.cfg
         self.pc = 0

@@ -1,0 +1,205 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Chiron-Slice: Interactive Traceability Dashboard</title>
+        <style>
+            body { background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', Courier, monospace; display: flex; height: 100vh; margin: 0; }
+            #canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background-color: #2d2d2d; border-right: 2px solid #444; }
+            #code-container { flex: 1; padding: 20px; overflow-y: auto; font-size: 16px; line-height: 1.5; }
+            svg { background-color: #1e1e1e; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+            .code-line { padding: 4px 8px; border-radius: 4px; border-left: 4px solid transparent; cursor: pointer; transition: background 0.2s; }
+            .code-line:hover { background-color: #333; }
+            .line-num { color: #858585; display: inline-block; width: 30px; border-right: 1px solid #555; margin-right: 10px; }
+            .turtle-stroke { cursor: pointer; transition: stroke 0.2s, stroke-width 0.2s; }
+            .turtle-stroke:hover { stroke: #60a5fa; stroke-width: 6; }
+            
+            /* Highlighting Classes */
+            .highlight-target { background-color: #3f3f46; border-left-color: #60a5fa; font-weight: bold; color: #fff; }
+            .highlight-slice { background-color: #27272a; border-left-color: #f59e0b; }
+            .stroke-active { stroke: #f59e0b; stroke-width: 6; }
+        </style>
+    </head>
+    <body>
+
+        <div id="canvas-container">
+            <svg width="600" height="600">
+                
+        <line x1="350.0" y1="250.0" x2="400.0" y2="250.0" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(5)" 
+              data-line="5">
+        </line>
+        <line x1="400.0" y1="250.0" x2="400.0" y2="300.0" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(7)" 
+              data-line="7">
+        </line>
+        <line x1="400.0" y1="300.0" x2="350.0" y2="300.0" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(9)" 
+              data-line="9">
+        </line>
+        <line x1="350.0" y1="300.0" x2="350.0" y2="250.0" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(11)" 
+              data-line="11">
+        </line>
+        <line x1="300.0" y1="300.0" x2="280.30384493975583" y2="303.4729635533386" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(32)" 
+              data-line="32">
+        </line>
+        <line x1="280.30384493975583" y1="303.4729635533386" x2="280.30384493975583" y2="243.47296355333862" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(34)" 
+              data-line="34">
+        </line>
+        <line x1="280.30384493975583" y1="243.47296355333862" x2="273.46344207324245" y2="262.2668159690568" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(32)" 
+              data-line="32">
+        </line>
+        <line x1="273.46344207324245" y1="262.2668159690568" x2="221.50191784617613" y2="232.26681596905678" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(34)" 
+              data-line="34">
+        </line>
+        <line x1="221.50191784617613" y1="232.26681596905678" x2="234.35767003990694" y2="247.58770483143633" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(32)" 
+              data-line="32">
+        </line>
+        <line x1="234.35767003990694" y1="247.58770483143633" x2="182.39614581284062" y2="277.5877048314363" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(34)" 
+              data-line="34">
+        </line>
+        <line x1="182.39614581284062" y1="277.5877048314363" x2="202.09230087308478" y2="274.1147412780977" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(32)" 
+              data-line="32">
+        </line>
+        <line x1="202.09230087308478" y1="274.1147412780977" x2="202.09230087308478" y2="334.1147412780977" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(34)" 
+              data-line="34">
+        </line>
+        <line x1="202.09230087308478" y1="334.1147412780977" x2="208.93270373959814" y2="315.32088886237955" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(32)" 
+              data-line="32">
+        </line>
+        <line x1="208.93270373959814" y1="315.32088886237955" x2="260.89422796666446" y2="345.32088886237955" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(34)" 
+              data-line="34">
+        </line>
+        <line x1="260.89422796666446" y1="345.32088886237955" x2="248.03847577293368" y2="330.0" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(32)" 
+              data-line="32">
+        </line>
+        <line x1="248.03847577293368" y1="330.0" x2="300.0" y2="300.0" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick="highlightSlice(34)" 
+              data-line="34">
+        </line>
+            </svg>
+        </div>
+
+        <div id="code-container">
+            <h2 style="color: #60a5fa; margin-top: 0;">Chiron Static IR Viewer</h2>
+            <p style="color: #9ca3af; font-size: 14px;">Click on a graphical stroke on the left to highlight the exact code segment that drew it.</p>
+            <div id="code-line-0" class="code-line"><span class="line-num">00</span> penup</div>
+<div id="code-line-1" class="code-line"><span class="line-num">01</span> goto 50 50</div>
+<div id="code-line-2" class="code-line"><span class="line-num">02</span> pendown</div>
+<div id="code-line-3" class="code-line"><span class="line-num">03</span> :two = 200</div>
+<div id="code-line-4" class="code-line"><span class="line-num">04</span> :one = 100</div>
+<div id="code-line-5" class="code-line"><span class="line-num">05</span> forward 50</div>
+<div id="code-line-6" class="code-line"><span class="line-num">06</span> right 90</div>
+<div id="code-line-7" class="code-line"><span class="line-num">07</span> forward 50</div>
+<div id="code-line-8" class="code-line"><span class="line-num">08</span> right 90</div>
+<div id="code-line-9" class="code-line"><span class="line-num">09</span> forward 50</div>
+<div id="code-line-10" class="code-line"><span class="line-num">10</span> right 90</div>
+<div id="code-line-11" class="code-line"><span class="line-num">11</span> forward 50</div>
+<div id="code-line-12" class="code-line"><span class="line-num">12</span> penup</div>
+<div id="code-line-13" class="code-line"><span class="line-num">13</span> :vara = 20</div>
+<div id="code-line-14" class="code-line"><span class="line-num">14</span> :varb = 100</div>
+<div id="code-line-15" class="code-line"><span class="line-num">15</span> :varc = 60</div>
+<div id="code-line-16" class="code-line"><span class="line-num">16</span> :__rep_counter_1 = 1</div>
+<div id="code-line-17" class="code-line"><span class="line-num">17</span> (:__rep_counter_1 > 0)</div>
+<div id="code-line-18" class="code-line"><span class="line-num">18</span> goto 0 0</div>
+<div id="code-line-19" class="code-line"><span class="line-num">19</span> pendown</div>
+<div id="code-line-20" class="code-line"><span class="line-num">20</span> :__rep_counter_2 = 6</div>
+<div id="code-line-21" class="code-line"><span class="line-num">21</span> (:__rep_counter_2 > 0)</div>
+<div id="code-line-22" class="code-line"><span class="line-num">22</span> (:vara != :varb)</div>
+<div id="code-line-23" class="code-line"><span class="line-num">23</span> (:vara > :varb)</div>
+<div id="code-line-24" class="code-line"><span class="line-num">24</span> right :vara</div>
+<div id="code-line-25" class="code-line"><span class="line-num">25</span> False</div>
+<div id="code-line-26" class="code-line"><span class="line-num">26</span> left :varb</div>
+<div id="code-line-27" class="code-line"><span class="line-num">27</span> False</div>
+<div id="code-line-28" class="code-line"><span class="line-num">28</span> ((:vara <= :varc) or (:varb <= :varc))</div>
+<div id="code-line-29" class="code-line"><span class="line-num">29</span> :vara = (:varc / :vara)</div>
+<div id="code-line-30" class="code-line"><span class="line-num">30</span> :varb = (:varb / :varc)</div>
+<div id="code-line-31" class="code-line"><span class="line-num">31</span> :varc = :varb</div>
+<div id="code-line-32" class="code-line"><span class="line-num">32</span> forward :vara</div>
+<div id="code-line-33" class="code-line"><span class="line-num">33</span> right :varb</div>
+<div id="code-line-34" class="code-line"><span class="line-num">34</span> forward :varc</div>
+<div id="code-line-35" class="code-line"><span class="line-num">35</span> left :varc</div>
+<div id="code-line-36" class="code-line"><span class="line-num">36</span> :__rep_counter_2 = (:__rep_counter_2 - 1)</div>
+<div id="code-line-37" class="code-line"><span class="line-num">37</span> False</div>
+<div id="code-line-38" class="code-line"><span class="line-num">38</span> left 45</div>
+<div id="code-line-39" class="code-line"><span class="line-num">39</span> :__rep_counter_1 = (:__rep_counter_1 - 1)</div>
+<div id="code-line-40" class="code-line"><span class="line-num">40</span> False</div>
+<div id="code-line-41" class="code-line"><span class="line-num">41</span> penup</div>
+
+        </div>
+
+        <script>
+            // Normally, we would run the backward slice algorithm here in JS via an API, 
+            // but since this is static, clicking highlights the target line.
+            function highlightSlice(targetLine) {
+                // Reset all code lines
+                document.querySelectorAll('.code-line').forEach(el => {
+                    el.classList.remove('highlight-target', 'highlight-slice');
+                });
+                
+                // Reset all SVG lines
+                document.querySelectorAll('.turtle-stroke').forEach(el => {
+                    el.classList.remove('stroke-active');
+                });
+
+                // Highlight the specific code line
+                const codeDiv = document.getElementById('code-line-' + targetLine);
+                if (codeDiv) {
+                    codeDiv.classList.add('highlight-target');
+                    codeDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                // Highlight the matching SVG strokes
+                document.querySelectorAll(`.turtle-stroke[data-line="${targetLine}"]`).forEach(el => {
+                    el.classList.add('stroke-active');
+                });
+            }
+        </script>
+    </body>
+    </html>
+    

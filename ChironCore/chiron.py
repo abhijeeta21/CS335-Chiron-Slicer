@@ -26,6 +26,8 @@ import submissionAI as AISub
 from sbflSubmission import computeRanks
 import csv
 
+from slicer import ChironSlicer
+
 
 def cleanup():
     pass
@@ -196,6 +198,13 @@ if __name__ == "__main__":
         type=bool,
     )
 
+    # --- NEW ARGUMENTS FOR SLICING (Phase 2 & 3) ---
+    cmdparser.add_argument("--slice-var", help="Variable to trace backwards", type=str)
+    cmdparser.add_argument("--slice-line", help="Line number to start backward slice", type=int)
+    cmdparser.add_argument("--forward-slice-var", help="Variable to track downstream (taint analysis)", type=str)
+    cmdparser.add_argument("--html", action="store_true", help="Generate Interactive HTML Dashboard mapping UI to Code")
+    # -----------------------------------------------
+
     args = cmdparser.parse_args()
     ir = ""
 
@@ -240,6 +249,54 @@ if __name__ == "__main__":
         print("== Optimized IR ==")
         irHandler.pretty_print(irHandler.ir)
 
+    # ==========================================================
+    # --- PHASE 2: STATIC SLICING EXECUTION ---
+    # ==========================================================
+    
+    # Backward Slicing execution
+    if args.slice_line is not None and args.slice_var:
+        print(f"\n[BACKWARD SLICE] Tracing dependency for variable '{args.slice_var}' at line {args.slice_line}...")
+        slicer = ChironSlicer(irHandler)
+        
+        # Pass BOTH the line and the variable to our new precision function
+        backward_slice = slicer.get_backward_slice(args.slice_line, args.slice_var)
+        
+        if backward_slice:
+            print(f"\n--- Resulting Code Slice (Total Lines: {len(backward_slice)}) ---")
+            for idx in backward_slice:
+                stmt = irHandler.ir[idx][0]
+                prefix = ">>" if idx == args.slice_line else "  "
+                print(f"{prefix} [Line {idx:02d}] : {stmt}")
+
+    # Forward Slicing / Taint Tracking execution
+    if args.forward_slice_var:
+        print(f"\n[FORWARD SLICE] Tracing downstream effects for variable '{args.forward_slice_var}'...")
+        slicer = ChironSlicer(irHandler)
+        
+        # Automatically find the line where this variable is first initialized
+        start_line = -1
+        for idx, (stmt, jmp) in enumerate(irHandler.ir):
+            if isinstance(stmt, ChironAST.AssignmentCommand) and stmt.lvar.varname == args.forward_slice_var:
+                start_line = idx
+                break
+        
+        if start_line != -1:
+            forward_slice = slicer.get_forward_slice(start_line)
+            print(f"\n--- Resulting Code Slice (Total Lines: {len(forward_slice)}) ---")
+            for idx in forward_slice:
+                stmt = irHandler.ir[idx][0]
+                prefix = ">>" if idx == start_line else "  "
+                print(f"{prefix} [Line {idx:02d}] : {stmt}")
+        else:
+            print(f"[Error] Variable {args.forward_slice_var} is never assigned in the source code.")
+
+    # ==========================================================
+    # --- PHASE 3: HTML TRACER (To be built next) ---
+    # ==========================================================
+    if args.html:
+        import html_tracer
+        html_tracer.generate_dashboard(irHandler, args.progfl, args.params)
+
     if args.dump_ir:
         irHandler.pretty_print(irHandler.ir)
         irHandler.dumpIR("optimized.kw", irHandler.ir)
@@ -276,10 +333,8 @@ if __name__ == "__main__":
         for index, x in enumerate(corpus):
             print(f"\tInput {index} : {x.data}")
 
-    if args.run:
-        # for stmt,pc in ir:
-        #     print(str(stmt.__class__.__bases__[0].__name__),pc)
-
+    
+    if args.run and not args.html: # Prevent standard UI from opening if we want HTML
         inptr = ConcreteInterpreter(irHandler, args)
         terminated = False
         inptr.initProgramContext(args.params)
@@ -288,11 +343,28 @@ if __name__ == "__main__":
             if terminated:
                 break
         print("Program Ended.")
-        print()
         print("Press ESCAPE to exit")
         turtle.listen()
         turtle.onkeypress(stopTurtle, "Escape")
         turtle.mainloop()
+
+    # if args.run:
+    #     # for stmt,pc in ir:
+    #     #     print(str(stmt.__class__.__bases__[0].__name__),pc)
+
+    #     inptr = ConcreteInterpreter(irHandler, args)
+    #     terminated = False
+    #     inptr.initProgramContext(args.params)
+    #     while True:
+    #         terminated = inptr.interpret()
+    #         if terminated:
+    #             break
+    #     print("Program Ended.")
+    #     print()
+    #     print("Press ESCAPE to exit")
+    #     turtle.listen()
+    #     turtle.onkeypress(stopTurtle, "Escape")
+    #     turtle.mainloop()
 
     if args.SBFL:
         if not args.buggy:
