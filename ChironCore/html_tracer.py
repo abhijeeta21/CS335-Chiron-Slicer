@@ -41,6 +41,14 @@ class HeadlessTracer:
                 # FEATURE 2: Track implicit color state
                 self.current_color = stmt.color 
 
+            # --- ADD THIS BLOCK ---
+            elif isinstance(stmt, ChironAST.PenCommand):
+                if stmt.status == "penup":
+                    self.is_pendown = False
+                elif stmt.status == "pendown":
+                    self.is_pendown = True
+            # ----------------------
+
             elif isinstance(stmt, ChironAST.MoveCommand):
                 val = eval(self.addContext(stmt.expr))
                 new_x, new_y = self.x, self.y
@@ -76,7 +84,11 @@ def generate_dashboard(irHandler, progfl, params):
     print("[HTML TRACER] Calculating Dual-Mode Slices (Static & Dynamic)...")
     
     # Calculate Dead Code (Dynamic only, as static dead code is just unreachable code)
-    visual_ir_pcs = [idx for idx, (stmt, tgt) in enumerate(irHandler.ir) if isinstance(stmt, ChironAST.MoveCommand)]
+    # visual_ir_pcs = [idx for idx, (stmt, tgt) in enumerate(irHandler.ir) if isinstance(stmt, ChironAST.MoveCommand)]
+    # --- STRICT VISUAL DEAD CODE ---
+    # Only slice backward from movements that deposited ink on the canvas!
+    # (The DFA natively pulls in required rotations and pen commands via implicit state)
+    visual_ir_pcs = [stroke['ir_pc'] for stroke in tracer.trace_log]
     # alive_ir_set = set(slicer.get_union_slice(visual_ir_pcs, dynamic_trace=tracer.execution_path))
     
     # dead_source_lines = []

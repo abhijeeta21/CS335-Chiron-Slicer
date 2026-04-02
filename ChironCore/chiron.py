@@ -202,6 +202,7 @@ if __name__ == "__main__":
     cmdparser.add_argument("--slice-var", help="Variable to trace backwards", type=str)
     cmdparser.add_argument("--slice-line", help="Line number to start backward slice", type=int)
     cmdparser.add_argument("--forward-slice-var", help="Variable to track downstream (taint analysis)", type=str)
+    cmdparser.add_argument("--forward-slice-line", help="Line number where the variable is defined", type=int)
     cmdparser.add_argument("--html", action="store_true", help="Generate Interactive HTML Dashboard mapping UI to Code")
     cmdparser.add_argument("--plot-graphs", action="store_true", help="Generate PNG images of the DDG, CDG, and PDG") # <-- ADD THIS
     cmdparser.add_argument("--extract-color", help="Extract a sub-program that only draws a specific color", type=str)
@@ -333,38 +334,56 @@ if __name__ == "__main__":
                     actual_text = raw_code[s_line - 1].strip() if s_line <= len(raw_code) else "<hidden>"
                     print(f"{prefix} [Line {s_line:02d}] : {actual_text}")
 
-    # Forward Slicing / Taint Tracking execution
-    if args.forward_slice_var:
-        print(f"\n[FORWARD SLICE] Tracing downstream effects for variable '{args.forward_slice_var}'...")
+# --- UPGRADED FORWARD SLICING (Triple-Mode Support) ---
+    if args.forward_slice_var or args.forward_slice_line is not None:
+        mode_desc = f"variable '{args.forward_slice_var}'" if args.forward_slice_var else f"Source Line {args.forward_slice_line}"
+        print(f"\n[FORWARD SLICE] Tracing downstream effects for {mode_desc}...")
         slicer = ChironSlicer(irHandler)
         
-        start_ir_idx = -1
-        for idx, (stmt, jmp) in enumerate(irHandler.ir):
-            if isinstance(stmt, ChironAST.AssignmentCommand) and stmt.lvar.varname == args.forward_slice_var:
-                start_ir_idx = idx
-                break
-        
-        if start_ir_idx != -1:
-            forward_slice_ir = slicer.get_forward_slice(start_ir_idx)
-            
-            if forward_slice_ir:
-                # FIXED: Translate IR Indices -> Source Lines just like we did for Backward Slicing!
-                source_lines = sorted(list(set(getattr(irHandler.ir[i][0], 'sl', -1) for i in forward_slice_ir)))
-                source_lines = [l for l in source_lines if l != -1] 
-                
-                print(f"\n--- Resulting Code Slice (Total Original Lines: {len(source_lines)}) ---")
-                
-                with open(args.progfl, 'r') as f:
-                    raw_code = f.readlines()
-                    
-                start_source_line = getattr(irHandler.ir[start_ir_idx][0], 'sl', -1)
-                
-                for s_line in source_lines:
-                    prefix = ">>" if s_line == start_source_line else "  "
-                    actual_text = raw_code[s_line - 1].strip() if s_line <= len(raw_code) else "<hidden>"
-                    print(f"{prefix} [Line {s_line:02d}] : {actual_text}")
+        start_ir_indices = []
+
+        # Mode 1 & 3: Line number is provided (with or without variable)
+        if args.forward_slice_line is not None:
+            for idx, (stmt, jmp) in enumerate(irHandler.ir):
+                if getattr(stmt, 'sl', -1) == args.forward_slice_line:
+                    if args.forward_slice_var:
+                        if isinstance(stmt, ChironAST.AssignmentCommand) and stmt.lvar.varname == args.forward_slice_var:
+                            start_ir_indices.append(idx)
+                    else:
+                        start_ir_indices.append(idx)
+                        
+        # Mode 2: ONLY Variable is provided (Global variable tracking)
+        elif args.forward_slice_var:
+            for idx, (stmt, jmp) in enumerate(irHandler.ir):
+                if isinstance(stmt, ChironAST.AssignmentCommand) and stmt.lvar.varname == args.forward_slice_var:
+                    start_ir_indices.append(idx)
+
+        # Execute Error Checks or Process Slice
+        if not start_ir_indices:
+            if args.forward_slice_line is not None and args.forward_slice_var:
+                print(f"[Error] Variable '{args.forward_slice_var}' is not defined on line {args.forward_slice_line}.")
+            elif args.forward_slice_var:
+                print(f"[Error] Variable '{args.forward_slice_var}' is never assigned in the source code.")
+            elif args.forward_slice_line is not None:
+                print(f"[Error] Source line {args.forward_slice_line} not found or is not an executable instruction.")
         else:
-            print(f"[Error] Variable {args.forward_slice_var} is never assigned in the source code.")
+            forward_slice_ir = set()
+            for start_idx in start_ir_indices:
+                forward_slice_ir.update(slicer.get_forward_slice(start_idx))
+            
+            source_lines = sorted(list(set(getattr(irHandler.ir[i][0], 'sl', -1) for i in forward_slice_ir)))
+            source_lines = [l for l in source_lines if l != -1] 
+            
+            start_source_lines = {getattr(irHandler.ir[idx][0], 'sl', -1) for idx in start_ir_indices}
+            
+            print(f"\n--- Resulting Taint Trace (Affected Lines: {len(source_lines)}) ---")
+            with open(args.progfl, 'r') as f:
+                raw_code = f.readlines()
+                
+            for s_line in source_lines:
+                prefix = ">>" if s_line in start_source_lines else "  "
+                actual_text = raw_code[s_line - 1].strip() if s_line <= len(raw_code) else "<hidden>"
+                print(f"{prefix} [Line {s_line:02d}] : {actual_text}")
 
     # ==========================================================
     # --- PHASE 3: HTML TRACER (To be built next) ---

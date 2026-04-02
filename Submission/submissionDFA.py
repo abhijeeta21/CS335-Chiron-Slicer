@@ -27,7 +27,7 @@ def get_used_vars(ast_node):
     elif isinstance(ast_node, ChironAST.ConditionCommand):
         return get_used_vars(ast_node.cond)
     elif isinstance(ast_node, ChironAST.MoveCommand):
-        return get_used_vars(ast_node.expr) + [":__pen_color"]
+        return get_used_vars(ast_node.expr) + [":__pen_color", ":__heading", ":__pen_status"]
     elif isinstance(ast_node, ChironAST.GotoCommand):
         return get_used_vars(ast_node.xcor) + get_used_vars(ast_node.ycor)
     
@@ -78,10 +78,21 @@ class MovementTransferFunction(TransferFunction):
                 varName = stmt.lvar.varname
                 # KILL previous definitions, GEN this new line number
                 outState[varName] = MovementDomain({ir_idx})
-                
+
             elif isinstance(stmt, ChironAST.ColorCommand):
                 # Treat changing colors as assigning a value to our implicit state
                 outState[":__pen_color"] = MovementDomain({ir_idx})
+
+            # --- ADD THESE TWO NEW BLOCKS ---
+            elif isinstance(stmt, ChironAST.PenCommand):
+                # penup and pendown define the pen status
+                outState[":__pen_status"] = MovementDomain({ir_idx})
+                
+            elif isinstance(stmt, ChironAST.MoveCommand):
+                # left and right define the heading
+                if stmt.direction in ["left", "right"]:
+                    outState[":__heading"] = MovementDomain({ir_idx})
+            # --------------------------------
 
         if len(currBB.instrlist) > 0 and isinstance(currBB.instrlist[-1][0], ChironAST.ConditionCommand):
             return [outState, outState]
