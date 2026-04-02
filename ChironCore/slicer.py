@@ -1,5 +1,6 @@
 import networkx as nx
 from ChironAST import ChironAST
+from networkx.drawing.nx_agraph import to_agraph
 
 class ChironSlicer:
     def __init__(self, irHandler):
@@ -112,7 +113,9 @@ class ChironSlicer:
         # 2. Variable-Level (Criterion) Slice
         stmt = self.irHandler.ir[target_line][0]
         if target_var not in str(stmt):
-            print(f"\n[Error] Variable '{target_var}' is not used or defined on line {target_line}.")
+            # Fetch the original source line number!
+            source_line = getattr(stmt, 'sl', target_line)
+            print(f"\n[Error] Variable '{target_var}' is not used or defined on Source Line {source_line}.")
             return []
 
         immediate_preds = set()
@@ -157,3 +160,83 @@ class ChironSlicer:
         slice_nodes.add(target_line)
         
         return sorted(list(slice_nodes))
+
+    # --- NEW PLOTTING FUNCTIONS ---
+    def plot_graphs(self):
+        print("\n[PLOTTING] Generating graph images (DDG.png, CDG.png, PDG.png)...")
+        self._draw_graph(self.ddg, "Data Dependence Graph (DDG)", "DDG.png")
+        self._draw_graph(self.cdg, "Control Dependence Graph (CDG)", "CDG.png")
+        self._draw_graph(self.pdg, "Program Dependence Graph (PDG)", "PDG.png")
+        print("[PLOTTING] Done! Check your folder for the PNG files.\n")
+
+    def _draw_graph(self, graph, title, filename):
+        # 1. Clean the graph of floating nodes
+        clean_graph = graph.copy()
+        clean_graph.remove_nodes_from(list(nx.isolates(clean_graph)))
+        
+        if len(clean_graph.nodes) == 0:
+            print(f"  -> Skipping {filename} (Graph is empty)")
+            return
+
+        # 2. Map nodes to rich, readable text labels
+        mapping = {}
+        for node in clean_graph.nodes():
+            if node < len(self.irHandler.ir):
+                stmt = self.irHandler.ir[node][0]
+                source_line = getattr(stmt, 'sl', '?')
+                
+                stmt_str = str(stmt)
+                if len(stmt_str) > 30:
+                    stmt_str = stmt_str[:27] + "..."
+                    
+                mapping[node] = f"Line {source_line}\n{stmt_str}"
+            else:
+                mapping[node] = str(node)
+
+        # Apply the text labels to the actual graph nodes
+        labeled_graph = nx.relabel_nodes(clean_graph, mapping)
+
+        # 3. Convert to a Graphviz AGraph
+        try:
+            from networkx.drawing.nx_agraph import to_agraph
+            A = to_agraph(labeled_graph)
+        except ImportError:
+            print("[Error] pygraphviz is not installed. Cannot generate advanced graphs.")
+            return
+
+        # 4. Apply Professional Compiler-Grade Styling
+        # Graph settings: Top-to-Bottom flow ('TB'), high resolution
+        A.graph_attr.update(
+            label=title,
+            labelloc="t", # Put title at the top
+            fontsize=24,
+            fontname="Helvetica-Bold",
+            dpi=300,
+            nodesep=0.6,
+            ranksep=0.8,
+            rankdir="TB" 
+        )
+
+        # Node settings: Code-like boxes
+        A.node_attr.update(
+            shape="box",
+            style="filled, rounded",
+            fillcolor="#f8fafc",
+            color="#cbd5e1",
+            fontname="Courier",
+            fontsize=12,
+            penwidth=2
+        )
+
+        # Edge settings: Clear directional arrows with red data labels
+        A.edge_attr.update(
+            color="#64748b",
+            fontname="Helvetica-Bold",
+            fontsize=10,
+            fontcolor="#ef4444",
+            penwidth=1.5
+        )
+
+        # 5. Generate and Save the Image using the 'dot' engine
+        A.layout('dot')
+        A.draw(filename)
