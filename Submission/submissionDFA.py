@@ -27,7 +27,14 @@ def get_used_vars(ast_node):
     elif isinstance(ast_node, ChironAST.ConditionCommand):
         return get_used_vars(ast_node.cond)
     elif isinstance(ast_node, ChironAST.MoveCommand):
-        return get_used_vars(ast_node.expr) + [":__pen_color", ":__heading", ":__pen_status"]
+        # Precise DFA: 
+        # 'forward' and 'backward' care about ink (color and pen status) and direction (heading).
+        if ast_node.direction in ["forward", "backward"]:
+            return get_used_vars(ast_node.expr) + [":__pen_color", ":__heading", ":__pen_status"]
+        
+        # 'left' and 'right' only care about the current heading. They don't draw ink!
+        elif ast_node.direction in ["left", "right"]:
+            return get_used_vars(ast_node.expr) + [":__heading"]
     elif isinstance(ast_node, ChironAST.GotoCommand):
         return get_used_vars(ast_node.xcor) + get_used_vars(ast_node.ycor)
     

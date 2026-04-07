@@ -1,5 +1,6 @@
-:seed = 25
-:a = :seed * 2
-forward :a
-:b = :seed + 10
-backward :b
+:x = 5
+:y = :x + 3
+pendown
+forward :y
+left 90
+forward :x
