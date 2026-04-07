@@ -49,6 +49,21 @@ class HeadlessTracer:
                     self.is_pendown = True
             # ----------------------
 
+            # --- THE MISSING GOTO FIX ---
+            elif isinstance(stmt, ChironAST.GotoCommand):
+                new_x = eval(self.addContext(stmt.xcor))
+                new_y = eval(self.addContext(stmt.ycor))
+                
+                # In standard Turtle, Goto draws a line if the pen is down!
+                if self.is_pendown:
+                    self.trace_log.append({
+                        'x1': self.x, 'y1': self.y, 'x2': new_x, 'y2': new_y,
+                        'source_line': source_line, 'ir_pc': self.pc,
+                        'color': self.current_color
+                    })
+                self.x, self.y = new_x, new_y
+            # -----------------------------
+
             elif isinstance(stmt, ChironAST.MoveCommand):
                 val = eval(self.addContext(stmt.expr))
                 new_x, new_y = self.x, self.y

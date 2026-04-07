@@ -16,6 +16,9 @@ def get_used_vars(ast_node):
     """Recursively finds all variables read within an AST node."""
     if isinstance(ast_node, ChironAST.Var):
         return [ast_node.varname]
+
+    elif isinstance(ast_node, ChironAST.PenStatus):
+        return [":__pen_status"]
     elif isinstance(ast_node, (ChironAST.Num, ChironAST.BoolTrue, ChironAST.BoolFalse, ChironAST.PenStatus, ChironAST.NoOpCommand, ChironAST.PauseCommand, ChironAST.PenCommand)):
         return []
     elif isinstance(ast_node, (ChironAST.BinArithOp, ChironAST.BinCondOp)):
@@ -27,14 +30,11 @@ def get_used_vars(ast_node):
     elif isinstance(ast_node, ChironAST.ConditionCommand):
         return get_used_vars(ast_node.cond)
     elif isinstance(ast_node, ChironAST.MoveCommand):
-        # Precise DFA: 
-        # 'forward' and 'backward' care about ink (color and pen status) and direction (heading).
         if ast_node.direction in ["forward", "backward"]:
-            return get_used_vars(ast_node.expr) + [":__pen_color", ":__heading", ":__pen_status"]
-        
-        # 'left' and 'right' only care about the current heading. They don't draw ink!
+            return get_used_vars(ast_node.expr) + [":__pen_color", ":__heading", ":__pen_status", ":__position"]
         elif ast_node.direction in ["left", "right"]:
             return get_used_vars(ast_node.expr) + [":__heading"]
+
     elif isinstance(ast_node, ChironAST.GotoCommand):
         return get_used_vars(ast_node.xcor) + get_used_vars(ast_node.ycor)
     
@@ -74,36 +74,33 @@ class MovementDomain(Lattice):
 
 class MovementTransferFunction(TransferFunction):
     def transferFunction(self, currBBIN, currBB):
-        # Deep copy IN state to start computing OUT state
         outState = {}
         for var, dom in currBBIN.items():
             outState[var] = MovementDomain(dom.data)
 
-        # Step through each instruction in the basic block
         for stmt, ir_idx in currBB.instrlist:
+            # EXPLICIT STATE
             if isinstance(stmt, ChironAST.AssignmentCommand):
-                varName = stmt.lvar.varname
-                # KILL previous definitions, GEN this new line number
-                outState[varName] = MovementDomain({ir_idx})
-
+                outState[stmt.lvar.varname] = MovementDomain({ir_idx})
+                
+            # THE COMPLETE IMPLICIT STATE DEFINITIONS
             elif isinstance(stmt, ChironAST.ColorCommand):
-                # Treat changing colors as assigning a value to our implicit state
                 outState[":__pen_color"] = MovementDomain({ir_idx})
-
-            # --- ADD THESE TWO NEW BLOCKS ---
+                
             elif isinstance(stmt, ChironAST.PenCommand):
-                # penup and pendown define the pen status
                 outState[":__pen_status"] = MovementDomain({ir_idx})
                 
+            elif isinstance(stmt, ChironAST.GotoCommand):
+                outState[":__position"] = MovementDomain({ir_idx})
+                
             elif isinstance(stmt, ChironAST.MoveCommand):
-                # left and right define the heading
                 if stmt.direction in ["left", "right"]:
                     outState[":__heading"] = MovementDomain({ir_idx})
-            # --------------------------------
+                elif stmt.direction in ["forward", "backward"]:
+                    outState[":__position"] = MovementDomain({ir_idx})
 
         if len(currBB.instrlist) > 0 and isinstance(currBB.instrlist[-1][0], ChironAST.ConditionCommand):
             return [outState, outState]
-        
         return [outState]
 
 

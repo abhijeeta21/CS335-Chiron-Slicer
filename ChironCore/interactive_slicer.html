@@ -44,11 +44,35 @@
     </head>
     <body>
         <div id="canvas-container"><svg width="600" height="600">
-        <line x1="300.0" y1="300.0" x2="350.0" y2="300.0" 
+        <line x1="330.0" y1="280.0" x2="370.0" y2="280.0" 
               stroke="#4ade80" stroke-width="4" stroke-linecap="round"
               class="turtle-stroke" 
-              onclick='loadSlices(8, [8, 2, 3], [8, 2, 3])' 
-              data-line="8">
+              onclick='loadSlices(18, [33, 34, 3, 35, 5, 9, 11, 15, 16, 17, 18, 19, 23, 27, 29], [33, 34, 3, 35, 5, 15, 16, 17, 18, 19, 23])' 
+              data-line="18">
+        </line>
+        <line x1="370.0" y1="280.0" x2="382.3606797749979" y2="241.95773934819385" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick='loadSlices(18, [33, 34, 3, 35, 5, 9, 11, 15, 16, 17, 18, 19, 23, 27, 29], [33, 34, 3, 35, 5, 15, 16, 17, 18, 19, 23])' 
+              data-line="18">
+        </line>
+        <line x1="382.3606797749979" y1="241.95773934819385" x2="350.0" y2="218.44632925649495" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick='loadSlices(18, [33, 34, 3, 35, 5, 9, 11, 15, 16, 17, 18, 19, 23, 27, 29], [33, 34, 3, 35, 5, 15, 16, 17, 18, 19, 23])' 
+              data-line="18">
+        </line>
+        <line x1="350.0" y1="218.44632925649495" x2="317.6393202250021" y2="241.95773934819385" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick='loadSlices(18, [33, 34, 3, 35, 5, 9, 11, 15, 16, 17, 18, 19, 23, 27, 29], [33, 34, 3, 35, 5, 15, 16, 17, 18, 19, 23])' 
+              data-line="18">
+        </line>
+        <line x1="317.6393202250021" y1="241.95773934819385" x2="330.0" y2="280.0" 
+              stroke="#4ade80" stroke-width="4" stroke-linecap="round"
+              class="turtle-stroke" 
+              onclick='loadSlices(18, [33, 34, 3, 35, 5, 9, 11, 15, 16, 17, 18, 19, 23, 27, 29], [33, 34, 3, 35, 5, 15, 16, 17, 18, 19, 23])' 
+              data-line="18">
         </line></svg></div>
         <div id="code-container">
             <h2 style="color: #60a5fa; margin-top: 0;">Chiron Semantic Debugger</h2>
@@ -61,14 +85,44 @@
                 </select>
             </div>
 
-            <div id="code-line-1" class="code-line"><span class="line-num">01</span> :flag = 0</div>
-<div id="code-line-2" class="code-line"><span class="line-num">02</span> :side = 50</div>
-<div id="code-line-3" class="code-line"><span class="line-num">03</span> pendown</div>
-<div id="code-line-4" class="code-line"><span class="line-num">04</span> if :flag > 0 [</div>
-<div id="code-line-5" class="code-line"><span class="line-num">05</span> :shadow = :side + 10</div>
-<div id="code-line-6" class="code-line"><span class="line-num">06</span> forward :shadow</div>
-<div id="code-line-7" class="code-line"><span class="line-num">07</span> ]</div>
-<div id="code-line-8" class="code-line"><span class="line-num">08</span> forward :side</div>
+            <div id="code-line-1" class="code-line"><span class="line-num">01</span> pendown</div>
+<div id="code-line-2" class="code-line"><span class="line-num">02</span> </div>
+<div id="code-line-3" class="code-line"><span class="line-num">03</span> repeat 1 [</div>
+<div id="code-line-4" class="code-line"><span class="line-num">04</span> </div>
+<div id="code-line-5" class="code-line"><span class="line-num">05</span> if (:x > :y) [</div>
+<div id="code-line-6" class="code-line"><span class="line-num">06</span> penup</div>
+<div id="code-line-7" class="code-line"><span class="line-num">07</span> goto (:x, :y)</div>
+<div id="code-line-8" class="code-line"><span class="line-num">08</span> pendown</div>
+<div id="code-line-9" class="code-line"><span class="line-num">09</span> repeat 4 [</div>
+<div id="code-line-10" class="code-line"><span class="line-num">10</span> forward :x</div>
+<div id="code-line-11" class="code-line"><span class="line-num">11</span> left 90</div>
+<div id="code-line-12" class="code-line"><span class="line-num">12</span> ]</div>
+<div id="code-line-13" class="code-line"><span class="line-num">13</span> ] else [</div>
+<div id="code-line-14" class="code-line"><span class="line-num">14</span> penup</div>
+<div id="code-line-15" class="code-line"><span class="line-num">15</span> goto (:y, :x)</div>
+<div id="code-line-16" class="code-line"><span class="line-num">16</span> pendown</div>
+<div id="code-line-17" class="code-line"><span class="line-num">17</span> repeat 5 [</div>
+<div id="code-line-18" class="code-line"><span class="line-num">18</span> forward :p</div>
+<div id="code-line-19" class="code-line"><span class="line-num">19</span> left 72</div>
+<div id="code-line-20" class="code-line"><span class="line-num">20</span> ]</div>
+<div id="code-line-21" class="code-line"><span class="line-num">21</span> ]</div>
+<div id="code-line-22" class="code-line"><span class="line-num">22</span> </div>
+<div id="code-line-23" class="code-line"><span class="line-num">23</span> if (:z >= :p) [</div>
+<div id="code-line-24" class="code-line"><span class="line-num">24</span> penup</div>
+<div id="code-line-25" class="code-line"><span class="line-num">25</span> goto (:p, :x + :z)</div>
+<div id="code-line-26" class="code-line"><span class="line-num">26</span> pendown</div>
+<div id="code-line-27" class="code-line"><span class="line-num">27</span> repeat 6 [</div>
+<div id="code-line-28" class="code-line"><span class="line-num">28</span> backward :x</div>
+<div id="code-line-29" class="code-line"><span class="line-num">29</span> left 60</div>
+<div id="code-line-30" class="code-line"><span class="line-num">30</span> ]</div>
+<div id="code-line-31" class="code-line"><span class="line-num">31</span> ]</div>
+<div id="code-line-32" class="code-line"><span class="line-num">32</span> </div>
+<div id="code-line-33" class="code-line"><span class="line-num">33</span> :x = :x + 10</div>
+<div id="code-line-34" class="code-line"><span class="line-num">34</span> :y = :y + 10</div>
+<div id="code-line-35" class="code-line"><span class="line-num">35</span> :z = :z + 10</div>
+<div id="code-line-36" class="code-line"><span class="line-num">36</span> ]</div>
+<div id="code-line-37" class="code-line"><span class="line-num">37</span> </div>
+<div id="code-line-38" class="code-line"><span class="line-num">38</span> penup</div>
 
         </div>
         <script>
@@ -78,7 +132,7 @@
             let currentDynamicSlice = [];
 
             // Dim dead code on load
-            const deadLines = [1, 4, 5, 6];
+            const deadLines = [1, 6, 7, 8, 9, 10, 11, 14, 24, 25, 26, 27, 28, 29, 38];
             deadLines.forEach(line => {
                 let el = document.getElementById('code-line-' + line);
                 if(el) el.classList.add('dead-code');
