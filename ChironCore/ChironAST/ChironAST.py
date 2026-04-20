@@ -20,9 +20,6 @@ class ColorCommand(Instruction):
         # We add the quotes back just for the visual IR printout!
         return f'color "{self.color}"'
 
-    def __str__(self):
-        return "color " + self.color
-
 class AssignmentCommand(Instruction):
     def __init__(self, leftvar, rexpr):
         self.lvar = leftvar

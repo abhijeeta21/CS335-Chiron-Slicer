@@ -1,6 +1,6 @@
 pendown
 
-repeat 1 [
+repeat 3 [
 
 	if (:x > :y) [
 		penup

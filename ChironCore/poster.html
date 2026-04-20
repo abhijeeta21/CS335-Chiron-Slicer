@@ -1,399 +1,1389 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chiron-Slice — A1 Research Poster • IIT Kanpur CS335</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap');
-        
-        @page { size: A1 portrait; margin: 0; }
-        
-        :root {
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --surface2: #f1f5f9;
-            --border: #e2e8f0;
-            --teal: #00bfa5;
-            --blue: #1976d2;
-            --navy: #0f172a;
-            --text: #1e2937;
-            --muted: #64748b;
-        }
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-            background: #e2e8f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .poster {
-            width: 841mm;
-            min-height: 594mm;
-            background: var(--bg);
-            color: var(--text);
-            box-shadow: 0 0 80px rgba(0, 0, 0, 0.15);
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #cbd5e1;
-        }
-        
-        /* Corner marks */
-        .corner {
-            position: absolute;
-            width: 28px; height: 28px;
-            border: 3px solid var(--teal);
-            z-index: 10;
-        }
-        .tl { top: 12px; left: 12px; border-right: none; border-bottom: none; }
-        .tr { top: 12px; right: 12px; border-left: none; border-bottom: none; }
-        .bl { bottom: 12px; left: 12px; border-right: none; border-top: none; }
-        .br { bottom: 12px; right: 12px; border-left: none; border-top: none; }
-        
-        header {
-            height: 92px;
-            background: linear-gradient(90deg, var(--blue), var(--teal));
-            color: white;
-            display: grid;
-            grid-template-columns: 1fr auto;
-            align-items: center;
-            padding: 0 42px;
-            position: relative;
-        }
-        
-        .title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 42px;
-            font-weight: 700;
-            letter-spacing: -2px;
-            line-height: 1;
-        }
-        .subtitle {
-            font-size: 18px;
-            font-weight: 500;
-            margin-top: 4px;
-            opacity: 0.95;
-        }
-        
-        .header-right {
-            text-align: right;
-        }
-        .iitk {
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-        
-        .body {
-            padding: 42px 42px 30px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 22px;
-        }
-        
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-        }
-        
-        .section-header {
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--blue);
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .teal-text { color: var(--teal); }
-        .blue-text { color: var(--blue); }
-        
-        .abstract {
-            grid-column: 1 / -1;
-            background: linear-gradient(135deg, #f0fdfa, #e0f2fe);
-            border: 2px solid var(--teal);
-        }
-        
-        .pipeline {
-            grid-column: 1 / -1;
-            background: var(--surface);
-            border-radius: 16px;
-            padding: 28px;
-            border: 1px solid var(--border);
-        }
-        
-        .demo {
-            grid-column: 1 / -1;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-        }
-        
-        .demo-canvas {
-            background: #0f172a;
-            border-radius: 12px;
-            padding: 20px;
-            position: relative;
-        }
-        
-        .code {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 14px;
-        }
-        
-        footer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 58px;
-            background: var(--blue);
-            color: white;
-            display: flex;
-            align-items: center;
-            padding: 0 42px;
-            font-size: 13px;
-            justify-content: space-between;
-        }
-        
-        .flow {
-            animation: flow 2s infinite linear;
-        }
-    </style>
+<meta charset="UTF-8"/>
+<title>Chiron Framework – Research Poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  @page {
+  size: 2245px 3190px; /* Forces the exact pixel dimensions of your poster */
+  margin: 0; /* Removes the browser's default white print margins */
+}
+
+@media print {
+  body {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #FFFEF9 !important; /* Matches --paper */
+  }
+  .poster {
+    box-shadow: none !important; /* Removes shadow for clean printing */
+    border: none;
+  }
+}
+/* ── Print target: A1 portrait 594×841mm ──
+   Screen preview at 0.25 scale equivalent: 893×1263px */
+:root {
+  --navy:   #1B2A4A;
+  --navy2:  #243659;
+  --gold:   #C8A84B;
+  --gold-lt:#F0DFA0;
+  --teal:   #1A5F7A;
+  --sage:   #3D6B4F;
+  --bg:     #F7F5F0;
+  --paper:  #FFFEF9;
+  --rule:   #C8B99A;
+  --text:   #1C1C1C;
+  --muted:  #4A4A4A;
+  --code-bg:#1E2D40;
+  --code-fg:#D4E5F7;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Crimson Pro', 'Georgia', serif;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text);
+  background: #D0CCC5;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* ── THE POSTER SHEET ── */
+.poster {
+  width: 2245px;
+  min-height: 3190px;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+}
+
+/* ══════════════════════════════
+   HEADER
+══════════════════════════════ */
+.poster-header {
+  background: var(--navy);
+  padding: 30px 36px 22px;
+  position: relative;
+  overflow: hidden;
+}
+/* Subtle geometric decoration */
+.poster-header::before {
+  content:'';
+  position:absolute; top:-30px; right:-30px;
+  width:200px; height:200px; border-radius:50%;
+  border: 40px solid rgba(200,168,75,0.12);
+}
+.poster-header::after {
+  content:'';
+  position:absolute; bottom:-40px; right:80px;
+  width:120px; height:120px; border-radius:50%;
+  border: 25px solid rgba(200,168,75,0.08);
+}
+
+.header-top {
+  /* display: flex; */
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.header-logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.logo-mark {
+  width: 56px; height: 56px; border-radius: 8px;
+  background: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 30px; font-weight: 900; color: var(--navy);
+  flex-shrink: 0;
+}
+.logo-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(255,255,255,0.5); line-height: 1.8;
+}
+.logo-label strong { color: var(--gold); display:block; font-size:11px; letter-spacing:3px; }
+
+.surge-mark {
+  text-align: right; flex-shrink: 0;
+}
+.surge-mark .surge-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px; font-weight: 600; letter-spacing: 4px;
+  color: var(--gold); display: block;
+}
+.surge-mark .surge-sub {
+  font-size: 9px; color: rgba(255,255,255,0.5);
+  letter-spacing: 1.5px; text-transform: uppercase;
+}
+
+.poster-title-wrap { text-align:center; padding:0 8mm; }
+.poster-title {
+  
+  font-family:'Playfair Display',serif;
+  font-size:22pt; font-weight:900;
+  color:#fff; line-height:1.18; letter-spacing:.1mm;
+}
+.poster-subtitle {
+  font-size: 13.5px; color: var(--gold);
+  margin-top: 5px; font-style: italic; font-weight: 400;
+  letter-spacing: 0.2px;
+}
+
+.header-divider {
+  width: 60px; height: 3px; background: var(--gold);
+  margin: 14px auto 12px; border-radius: 2px;
+}
+
+.poster-authors {
+  text-align: center; color: rgba(255,255,255,0.88);
+  font-size: 12px; letter-spacing: 0.3px;
+}
+.poster-authors .names { font-weight: 600; font-size: 13px; margin-bottom: 3px; }
+.poster-affil {
+  font-size: 10.5px; color: rgba(255,255,255,0.55);
+  font-style: italic; text-align: center;
+  margin-top: 4px;
+}
+
+/* Gold bottom bar */
+.header-bar {
+  height: 5px;
+  background: linear-gradient(90deg, var(--gold) 0%, #E8C86A 50%, var(--gold) 100%);
+}
+
+/* ══════════════════════════════
+   BODY - 2 COLUMN
+══════════════════════════════ */
+.poster-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+}
+
+.col-left  { padding: 22px 20px 16px 28px; border-right: 1px solid var(--rule); display: flex;             /* ADD THIS */
+  flex-direction: column;}
+.col-right { padding: 22px 28px 16px 20px; }
+
+/* ── SECTION ── */
+.section { margin-bottom: 18px; }
+
+.sec-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 14.5px; font-weight: 700;
+  color: var(--navy);
+  letter-spacing: 0.3px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--navy);
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sec-heading .sec-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; font-weight: 600; color: var(--gold);
+  background: var(--navy);
+  padding: 1px 5px; border-radius: 3px;
+  letter-spacing: 1px;
+}
+.sec-heading.teal { color: var(--teal); border-bottom-color: var(--teal); }
+.sec-heading.teal .sec-num { background: var(--teal); }
+.sec-heading.sage { color: var(--sage); border-bottom-color: var(--sage); }
+.sec-heading.sage .sec-num { background: var(--sage); }
+
+p.body-text {
+  font-size: 12.5px; text-align: justify;
+  color: var(--text); margin-bottom: 6px;
+  line-height: 1.65;
+}
+p.body-text strong { color: var(--navy); font-weight: 600; }
+
+/* ── BULLET ── */
+ul.research-list {
+  list-style: none; padding: 0;
+}
+ul.research-list li {
+  font-size: 12px; padding: 3px 0 3px 16px;
+  position: relative; color: var(--text);
+  line-height: 1.55;
+  border-bottom: 1px dotted #DDD8CC;
+}
+ul.research-list li:last-child { border-bottom: none; }
+ul.research-list li::before {
+  content: '▸';
+  position: absolute; left: 0; top: 4px;
+  color: var(--gold); font-size: 9px;
+}
+ul.research-list li strong { color: var(--navy); }
+
+/* ── IMAGE PLACEHOLDER ── */
+.img-placeholder {
+  border: 2px dashed var(--rule);
+  background: var(--bg);
+  border-radius: 4px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+  gap: 5px;
+}
+.img-placeholder .ph-icon {
+  font-size: 22px; opacity: 0.4;
+}
+.img-placeholder .ph-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: #888;
+  font-weight: 600;
+}
+.img-placeholder .ph-desc {
+  font-size: 11px; color: #999; font-style: italic;
+  max-width: 220px; line-height: 1.4;
+}
+.ph-tall   { height: 140px; }
+.ph-medium { height: 110px; }
+.ph-short  { height: 80px; }
+
+/* ── FIGURE WITH CAPTION ── */
+.figure-container {
+  margin: 14px 0 18px 0; /* Tighter bottom margin to save space */
+  width: 100%;
+}
+
+.figure-full {
+  width: 100%;
+  overflow: hidden;
+  /* border: 1.5px solid var(--navy); Slightly thinner border for a cleaner look */
+  background: transparent; /* Removed #fff to prevent white letterboxing */
+  margin-bottom: 6px; /* Tighter space between image and caption */
+  display: flex; /* Removes phantom bottom spacing common with images */
+}
+
+.figure-full img {
+  width: 100%;
+  height: auto; /* Natural height */
+  display: block;
+  /* Removed object-fit: contain; natural dimensions will prevent whitespace entirely */
+}
+
+.figure-caption {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.8px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.6px;
+  line-height: 1.3;
+  padding: 0 10px;
+}
+
+/* ── EQUATION / FORMULA ── */
+.formula-line {
+  text-align: center;
+  margin: 10px 0;
+  font-family: 'Playfair Display', serif;
+  font-size: 16px; font-style: italic;
+  color: var(--navy);
+  letter-spacing: 1px;
+}
+.formula-line .op { color: var(--gold); font-style: normal; font-weight: 700; }
+.formula-pill {
+  display: inline-block;
+  padding: 2px 10px; border-radius: 3px;
+  font-size: 13px; font-style: normal;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600; letter-spacing: 0.5px;
+  color: #fff;
+}
+.pill-navy  { background: var(--navy); }
+.pill-teal  { background: var(--teal); }
+.pill-sage  { background: var(--sage); }
+
+/* ── CODE SNIPPET ── */
+.code-snip {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px; line-height: 1.6;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin: 6px 0;
+  border-left: 3px solid var(--gold);
+  white-space: pre;
+}
+.cc { color: #5C7A9C; }   /* comment */
+.cf { color: #F0B080; }   /* flag */
+.cs { color: #90D090; }   /* string / path */
+.ck { color: #80C8E8; }   /* keyword */
+
+/* ── PIPELINE STEPS ── */
+.pipeline-row {
+  display: flex; align-items: center;
+  gap: 0; margin: 10px 0;
+}
+.pipe-box {
+  flex: 1; background: var(--navy);
+  color: #fff; text-align: center;
+  padding: 6px 4px; font-size: 9.5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600; letter-spacing: 0.3px;
+  line-height: 1.3;
+}
+.pipe-box:first-child { border-radius: 4px 0 0 4px; }
+.pipe-box:last-child  { border-radius: 0 4px 4px 0; }
+.pipe-box.teal  { background: var(--teal); }
+.pipe-box.sage  { background: var(--sage); }
+.pipe-box.gold  { background: #8A6920; }
+.pipe-arrow-sm {
+  color: var(--gold); font-size: 12px; font-weight: 900;
+  flex-shrink: 0; padding: 0 2px; line-height: 1;
+}
+.pipe-sub {
+  font-size: 7.5px; color: rgba(255,255,255,0.65);
+  font-weight: 400; display:block; margin-top:1px;
+}
+
+/* ── IMPLICIT STATE TABLE ── */
+.state-grid {
+  width: 100%; border-collapse: collapse;
+  font-size: 11px; margin: 6px 0;
+}
+.state-grid th {
+  background: var(--navy); color: #fff;
+  padding: 5px 8px; text-align: left;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.5px;
+}
+.state-grid td {
+  padding: 4px 8px; border-bottom: 1px solid #E0DAD0;
+  vertical-align: top;
+}
+.state-grid tr:nth-child(even) td { background: var(--bg); }
+.state-grid td.var-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9.5px; color: var(--teal); font-weight: 600;
+}
+
+/* ── HIGHLIGHT INSET ── */
+.inset-box {
+  border-left: 3px solid var(--gold);
+  background: #F7F3E8;
+  padding: 7px 10px;
+  margin: 8px 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.inset-box strong { color: var(--navy); font-style: normal; }
+
+/* ── FEATURE ENTRY (no cards, just ruled sections) ── */
+.feature-entry { margin-bottom: 10px; }
+.feature-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px; font-weight: 600;
+  color: var(--navy); text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 3px;
+  display: flex; align-items: center; gap: 6px;
+}
+.feature-title .ft-num {
+  background: var(--teal); color: #fff;
+  border-radius: 50%; width: 16px; height: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 8px; flex-shrink: 0;
+}
+.feature-entry p { font-size: 12px; color: var(--muted); line-height: 1.55; }
+.feature-divider { border: none; border-top: 1px dotted #C8B99A; margin: 8px 0; }
+
+/* ── FOOTER ── */
+.poster-footer {
+  background: var(--navy);
+  padding: 10px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 3px solid var(--gold);
+}
+.footer-ref {
+  font-size: 9px; color: rgba(255,255,255,0.5);
+  font-style: italic; max-width: 520px; line-height: 1.5;
+}
+.footer-ref span { display: block; }
+.footer-contact {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; color: var(--gold); text-align: right;
+  letter-spacing: 0.5px; line-height: 1.8;
+}
+
+</style>
 </head>
 <body>
 <div class="poster">
 
-    <!-- Corner marks -->
-    <div class="corner tl"></div>
-    <div class="corner tr"></div>
-    <div class="corner bl"></div>
-    <div class="corner br"></div>
-
-    <!-- HEADER -->
-    <header>
-        <div>
-            <div class="title">Chiron-Slice</div>
-            <div class="subtitle">Advanced Static Slicing &amp; Visual Traceability for Turtle Graphics</div>
+  <!-- ═══ HEADER ═══ -->
+  <header class="poster-header">
+    <div class="header-top">
+      <!-- <div class="header-logo-area">
+        <div class="logo-mark">χ</div>
+        <div class="logo-label">
+          <strong>CHIRON</strong>
+          Program Analysis<br/>Framework v5.3
         </div>
-        <div class="header-right">
-            <div class="iitk">IIT KANPUR</div>
-            <div style="font-size:15px; margin-top:4px;">CS335 • Compiler Design • April 2026</div>
-            <div style="margin-top:18px; font-size:15px; display:flex; gap:24px; justify-content:flex-end;">
-                <div>Abhijeet Agarwal <span style="opacity:0.8;">(210025)</span></div>
-                <div>Suyash Kapoor <span style="opacity:0.8;">(231066)</span></div>
-                <div>Shravan Agrawal <span style="opacity:0.8;">(230984)</span></div>
-            </div>
-            <div style="margin-top:12px; font-size:13px; opacity:0.9;">
-                GitHub: <a href="https://github.com/skap-12/CS335-Project" style="color:white; text-decoration:underline;">skap-12/CS335-Project</a>
-            </div>
+      </div> -->
+
+      <div class="poster-title-wrap">
+        <div class="poster-title">
+          Chiron-Slicer: Bridging the Semantic Gap Between Program Dependence Graphs and Canvas Geometry
         </div>
-    </header>
-
-    <!-- BODY -->
-    <div class="body">
-
-        <!-- ABSTRACT -->
-        <div class="card abstract">
-            <div class="section-header teal-text">ABSTRACT</div>
-            <p style="font-size:17px; line-height:1.65; color:#1e2937;">
-                Chiron-Slice is a full-featured program analysis and visual debugging framework for Chiron Turtle-Lang. 
-                Building on Milestone 1's Data Dependence Graph (DDG) via Reaching Definitions DFA (including implicit visual states 
-                such as <span class="teal-text">:__pen_color</span>, <span class="teal-text">:__pen_status</span>, <span class="teal-text">:__heading</span>, <span class="teal-text">:__position</span>), 
-                we implemented a Control Dependence Graph (CDG) using Post-Dominator Trees on the reversed CFG and fused both into 
-                a Program Dependence Graph (PDG). This enables mathematically precise backward slicing, forward taint analysis, 
-                semantic color extraction, visual dead-code detection, and a fully interactive HTML dashboard that lets users 
-                <strong>click any turtle stroke on the canvas to instantly see the responsible source-code slice</strong>.
-            </p>
+        <div class="poster-subtitle">
+          Elevating implicit graphical state to first-class lattice variables for visual backward slicing and taint analysis.
         </div>
+      </div>
 
-        <!-- PROBLEM -->
-        <div class="card">
-            <div class="section-header" style="color:#e11d48;">THE PROBLEM</div>
-            <ul style="font-size:16px; line-height:1.7; padding-left:8px;">
-                <li>• Traditional debuggers cannot trace visual output back to source code</li>
-                <li>• Geometric and drawing bugs are extremely difficult to localize</li>
-                <li>• Static slicers are blind to implicit graphical state (color, pen, heading)</li>
-                <li>• No direct mapping between canvas strokes and original .tl lines</li>
-                <li>• Dynamic loop unrolling and runtime behavior are invisible in static analysis</li>
-            </ul>
-        </div>
-
-        <!-- WHY COOL -->
-        <div class="card">
-            <div class="section-header teal-text">WHY THIS PROJECT IS COOL</div>
-            <ul style="font-size:16px; line-height:1.7; padding-left:8px;">
-                <li>• First system that directly links <strong>ink on screen ↔ original source code</strong></li>
-                <li>• Interactive browser dashboard: click any stroke → exact slice appears</li>
-                <li>• Semantic color-based sub-program extraction</li>
-                <li>• Visual dead-code detection (pen-up moves, unused math)</li>
-                <li>• Full PDG implementation following Ottenstein &amp; Ottenstein (1984)</li>
-                <li>• Real-world debugging power for complex turtle drawings</li>
-            </ul>
-        </div>
-
-        <!-- PIPELINE -->
-        <div class="card pipeline" style="grid-column: 1 / -1;">
-            <div class="section-header blue-text">CHIRON-SLICE PIPELINE</div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:18px; font-size:15px; font-weight:600;">
-                <div style="text-align:center; flex:1;">Source .tl</div>
-                <div style="font-size:32px; color:var(--teal); margin:0 12px;" class="flow">→</div>
-                <div style="text-align:center; flex:1;">AST + Line Numbers</div>
-                <div style="font-size:32px; color:var(--teal); margin:0 12px;" class="flow">→</div>
-                <div style="text-align:center; flex:1;">IR + CFG</div>
-                <div style="font-size:32px; color:var(--teal); margin:0 12px;" class="flow">→</div>
-                <div style="text-align:center; flex:1.4; background:linear-gradient(90deg, #00bfa5, #1976d2); color:white; padding:14px 20px; border-radius:12px;">
-                    DDG (Reaching Definitions DFA)<br>
-                    <span style="font-size:13px; opacity:0.9;">+ implicit visual states</span>
-                </div>
-                <div style="font-size:32px; color:var(--teal); margin:0 12px;" class="flow">→</div>
-                <div style="text-align:center; flex:1;">CDG (Post-Dominators)</div>
-                <div style="font-size:32px; color:var(--teal); margin:0 12px;" class="flow">→</div>
-                <div style="text-align:center; flex:1;">PDG (networkx)</div>
-                <div style="font-size:32px; color:var(--teal); margin:0 12px;" class="flow">→</div>
-                <div style="text-align:center; flex:1.3; background:#00bfa5; color:white; padding:14px 20px; border-radius:12px; font-weight:700;">
-                    Dual Slicing Engine +<br>Interactive HTML Dashboard
-                </div>
-            </div>
-        </div>
-
-        <!-- FEATURES -->
-        <div class="card" style="grid-column:1/4;">
-            <div class="section-header teal-text">CORE FEATURES IMPLEMENTED</div>
-            <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:12px;">
-                <div style="background:#f8fafc; padding:14px; border-radius:10px; border:1px solid var(--border);">
-                    <strong>Backward Slicing</strong><br>
-                    <span style="font-size:13px; color:var(--muted);">Static + Dynamic (nx.ancestors)</span>
-                </div>
-                <div style="background:#f8fafc; padding:14px; border-radius:10px; border:1px solid var(--border);">
-                    <strong>Forward Slicing / Taint Analysis</strong><br>
-                    <span style="font-size:13px; color:var(--muted);">3 modes • nx.descendants()</span>
-                </div>
-                <div style="background:#f8fafc; padding:14px; border-radius:10px; border:1px solid var(--border);">
-                    <strong>Interactive HTML Dashboard</strong><br>
-                    <span style="font-size:13px; color:var(--muted);">Click any stroke → slice highlighted</span>
-                </div>
-                <div style="background:#f8fafc; padding:14px; border-radius:10px; border:1px solid var(--border);">
-                    <strong>Semantic Color Extraction</strong><br>
-                    <span style="font-size:13px; color:var(--muted);">--extract-color red</span>
-                </div>
-                <div style="background:#f8fafc; padding:14px; border-radius:10px; border:1px solid var(--border);">
-                    <strong>Visual Dead-Code Detection</strong><br>
-                    <span style="font-size:13px; color:var(--muted);">Pen-up moves &amp; unused math</span>
-                </div>
-                <div style="background:#f8fafc; padding:14px; border-radius:10px; border:1px solid var(--border);">
-                    <strong>Graph Visualizations</strong><br>
-                    <span style="font-size:13px; color:var(--muted);">DDG.png • CDG.png • PDG.png</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- INTERACTIVE DEMO -->
-        <div class="card demo" style="grid-column:1/4;">
-            <div>
-                <div class="section-header teal-text">INTERACTIVE HTML DASHBOARD</div>
-                <div class="demo-canvas">
-                    <svg width="100%" height="280" viewBox="0 0 320 280" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="320" height="280" fill="#0f172a"/>
-                        <rect x="70" y="100" width="120" height="110" fill="none" stroke="#3b82f6" stroke-width="22"/>
-                        <polyline points="80,100 160,45 240,100" fill="none" stroke="#ef4444" stroke-width="26" stroke-linejoin="round"/>
-                        <text x="165" y="175" fill="#fde047" font-size="22" font-weight="700" font-family="monospace">CLICKED STROKE</text>
-                        <circle cx="165" cy="78" r="14" fill="none" stroke="#ef4444" stroke-width="4" stroke-dasharray="3,3"/>
-                    </svg>
-                </div>
-            </div>
-            <div>
-                <div class="section-header blue-text">RESULTING SLICE (visual.tl)</div>
-                <div class="code">
-                    4 | pendown<br>
-                    5 | <span style="color:#ef4444;">pencolor "red"</span><br>
-                    6 | repeat 4 [<br>
-                    7 | &nbsp;&nbsp;forward :size<br>
-                    8 | &nbsp;&nbsp;right 90<br>
-                    11| <span style="color:#ef4444;">pencolor "red"</span><br>
-                    12| forward :trisize<br>
-                    <span style="color:#10b981;">→ Highlighted lines responsible for red roof</span>
-                </div>
-                <p style="margin-top:14px; font-size:14px; color:var(--muted);">Headless tracer records exact X/Y coordinates and maps every stroke back to original source lines.</p>
-            </div>
-        </div>
-
-        <!-- EVALUATION -->
-        <div class="card">
-            <div class="section-header blue-text">EVALUATION &amp; TEST CASES</div>
-            <table style="width:100%; font-size:14px; margin-top:12px; border-collapse:collapse;">
-                <tr style="background:#f1f5f9;"><th style="padding:10px; text-align:left;">Test File</th><th style="padding:10px; text-align:left;">Focus</th><th style="padding:10px;">Result</th></tr>
-                <tr><td style="padding:10px;">backward.tl</td><td style="padding:10px;">Loop-carried dependencies</td><td style="padding:10px; color:#10b981;">✓ PASS</td></tr>
-                <tr><td style="padding:10px;">forward.tl</td><td style="padding:10px;">Taint propagation</td><td style="padding:10px; color:#10b981;">✓ PASS</td></tr>
-                <tr><td style="padding:10px;">visual.tl</td><td style="padding:10px;">HTML dashboard + dynamic trace</td><td style="padding:10px; color:#eab308;">★ LIVE DEMO</td></tr>
-            </table>
-        </div>
-
-        <!-- DDG EXAMPLE -->
-        <div class="card" style="grid-column:2/4;">
-            <div class="section-header teal-text">DDG EXAMPLE (Intra-block + Conditional Merge)</div>
-            <svg width="100%" height="220" viewBox="0 0 520 220" xmlns="http://www.w3.org/2000/svg">
-                <!-- (Same detailed DDG SVG as in your original poster, but with light-friendly colors) -->
-                <rect x="20" y="20" width="92" height="38" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="3"/>
-                <text x="66" y="38" font-size="11" fill="#1e2937" font-family="JetBrains Mono">L0 :x = 3</text>
-                <!-- ... (full DDG SVG omitted for brevity but included in real code) ... -->
-            </svg>
-        </div>
-
-        <!-- CLI + CONTRIBUTIONS -->
-        <div class="card">
-            <div class="section-header blue-text">CLI USAGE</div>
-            <div class="code" style="margin-top:12px;">
-                uv run chiron.py -dfa -cfg_gen --slice-line 12 --slice-var :x ./example/script.tl<br>
-                uv run chiron.py -dfa -cfg_gen --html ./example/visual.tl<br>
-                uv run chiron.py -dfa -cfg_gen --extract-color red ./example/script.tl
-            </div>
-        </div>
-
-        <div class="card" style="grid-column:2/4;">
-            <div class="section-header teal-text">OUR CONTRIBUTIONS</div>
-            <ul style="font-size:15px; line-height:1.8;">
-                <li>AST line-number injection throughout the entire IR pipeline</li>
-                <li>Implicit visual state tracking in DFA (pen, color, heading, position)</li>
-                <li>Post-Dominator Tree based CDG on reversed CFG</li>
-                <li>Full PDG fusion (DDG + CDG)</li>
-                <li>Headless dynamic tracer + interactive SVG/HTML dashboard</li>
-                <li>Visual dead-code detection and semantic color extraction</li>
-            </ul>
-        </div>
-
-        <!-- FUTURE WORK -->
-        <div class="card" style="grid-column:1/4;">
-            <div class="section-header" style="color:#8b5cf6;">MILESTONE 3 (FUTURE WORK)</div>
-            <p style="font-size:15px;">True Dynamic Slicing • Stateful Visual Slicing • Differential Visual Slicing (Geometric XOR)</p>
-        </div>
-
+      <!-- <div class="surge-mark">
+        <span class="surge-text">SURGE</span>
+        <span class="surge-sub">IIT Kanpur</span>
+      </div> -->
     </div>
 
-    <!-- FOOTER -->
-    <footer>
-        <div>Key Ideas: Post-Dominator Tree • Implicit Visual DFA • Dynamic Trace Projection • Union Slicing • O(V+E) Reachability</div>
-        <div>Chiron v1.0.4 • All features integrated in chiron.py &amp; slicer.py</div>
-        <div>Git Commit: e676d42702ee7fd45306e1068d373e2c3fdaa0cf</div>
-    </footer>
+    <div class="header-divider"></div>
+
+    <div class="poster-authors">
+      <div class="names">
+        Abhijeet Agarwal(210025) &ensp;·&ensp; Suyash Kapoor(231066) &ensp;·&ensp; Shravan Agrawal(230984)
+      </div>
+    </div>
+    <div class="poster-affil">
+      Department of Computer Science &amp; Engineering &ensp;|&ensp; Indian Institute of Technology Kanpur 
+    </div>
+  </header>
+  <div class="header-bar"></div>
+
+  <!-- ═══ BODY ═══ -->
+  <div class="poster-body">
+
+    <!-- <div class="col-left">
+
+      <div class="section">
+        <div class="sec-heading"><span class="sec-num">01</span>The Problem Being Solved</div>
+        <p class="body-text">
+          The original Chiron framework provides a robust foundation for teaching program analysis. However, its analytical scope is strictly bound to explicit text and mathematical memory states (e.g., tracking the integer value of a variable <code>:x</code>).
+        </p>
+        <p class="body-text">
+          <strong>It is computationally blind to the canvas.</strong> When the baseline framework executes a command like <code>forward(:x)</code>, it throws the visual geometric data away. If a stroke appears in the wrong place on the screen, a standard Control Flow Graph (CFG) cannot answer the core debugging question: <em>Which exact AST nodes produced this specific ink?</em>
+        </p>
+      </div>
+
+      <div class="section">
+        <div class="sec-heading sage"><span class="sec-num">02</span>Methodology: Implicit State Modeling</div>
+        <p class="body-text">
+          To bridge this gap, we expanded the base <code>tlang</code> grammar to support rich graphical properties (e.g., the <code>color</code> command). Our core theoretical contribution was modifying the Reaching Definitions DFA engine to treat implicit graphical context as <strong>explicit lattice variables</strong>.
+        </p>
+        
+        <table class="state-grid">
+          <thead>
+            <tr><th>Implicit Lattice Variable</th><th>Defined By (Def)</th><th>Consumed By (Use)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="var-name">:__pen_color</td><td>color "str"</td><td>forward, backward</td></tr>
+            <tr><td class="var-name">:__heading</td><td>left, right</td><td>forward, backward</td></tr>
+            <tr><td class="var-name">:__pen_status</td><td>penup, pendown</td><td>forward, backward</td></tr>
+            <tr><td class="var-name">:__position</td><td>goto, forward</td><td>forward, backward</td></tr>
+          </tbody>
+        </table>
+
+        <div class="code-snip">
+<span class="cc"># Inside MovementTransferFunction (submissionDFA.py)</span>
+<span class="ck">elif</span> isinstance(stmt, ChironAST.ColorCommand):
+    outState[<span class="cs">":__pen_color"</span>] = MovementDomain({ir_idx})
+        </div>
+        
+        <p class="body-text" style="font-style:italic; font-size: 13.5px; color: var(--muted); margin-top: 8px;">
+          By injecting these hidden variables into the Worklist algorithm, our Data Dependence Graph (DDG) successfully establishes Def-Use chains that connect a canvas stroke to a rotation or color command executed hundreds of lines prior.
+        </p>
+      </div>
+
+      <div class="section">
+        <div class="sec-heading sage"><span class="sec-num">03</span>Methodology: PDG Fusion Pipeline</div>
+        <p class="body-text">We compile the enhanced AST into a unified <strong>Program Dependence Graph (PDG)</strong> by fusing two orthogonal sub-graphs:</p>
+
+        <div class="formula-line">
+          <span class="formula-pill pill-navy">PDG</span>
+          <span class="op"> = </span>
+          <span class="formula-pill pill-teal">DDG</span>
+          <span class="op"> ⊕ </span>
+          <span class="formula-pill pill-sage">CDG</span>
+        </div>
+
+        <div class="pipeline-row">
+          <div class="pipe-box">Extended AST<span class="pipe-sub">Front-end</span></div>
+          <div class="pipe-arrow-sm">›</div>
+          <div class="pipe-box teal">Stateful DFA<span class="pipe-sub">Worklist</span></div>
+          <div class="pipe-arrow-sm">›</div>
+          <div class="pipe-box sage">CDG / DDG<span class="pipe-sub">Sub-graphs</span></div>
+          <div class="pipe-arrow-sm">›</div>
+          <div class="pipe-box gold">Fused PDG<span class="pipe-sub">Slicer Engine</span></div>
+        </div>
+
+        <p class="body-text" style="margin-top:8px;">
+          <strong>Data Dependence (DDG):</strong> Tracks all Def-Use chains, including our novel graphical lattice variables.
+        </p>
+        <p class="body-text">
+          <strong>Control Dependence (CDG):</strong> Computed via Post-Dominance Frontiers on the reversed CFG.
+        </p>
+      </div>
+
+      <div class="img-placeholder ph-tall">
+        <div class="ph-icon">🖼</div>
+        <div class="ph-label">[ Figure 1: Pipeline Architecture ]</div>
+        <div class="ph-desc">The enhanced Chiron pipeline. Our stateful DFA generates the augmented DDG, which fuses with the CDG to form the visual-aware PDG.</div>
+      </div>
+
+    </div> -->
+    <!-- ════════ UPDATED LEFT COLUMN ════════ -->
+<div class="col-left">
+  <div class="section">
+  <div class="sec-heading"><span class="sec-num">01</span>The Problem Being Solved</div>
+  <p class="body-text">
+    Chiron is already a fantastic educational framework with a solid compiler and Control Flow Graph. We wanted to expand its capabilities to include advanced tools like program slicing, dead-code detection, and taint tracking. These features are incredibly helpful because they allow students to deeply understand how different parts of their code influence each other.
+  </p>
+  <p class="body-text">
+    <strong>The Visual Challenge:</strong> Standard analyzers only track regular variables (like numbers) and completely ignore the graphical state, such as the turtle's position, heading, or pen color. Because of this blind spot, if a visual bug occurs-like a stroke drawn in the wrong place-the system can't help you find the code responsible. 
+  </p>
+</div>
+
+  <div class="section">
+  <div class="sec-heading"><span class="sec-num">02</span>Why Chiron-Slicer is Cool !!</div>
+  
+  <p class="body-text">
+    We built a slicing engine that tracks these hidden visual states right alongside regular variables. This bridges the gap between the complex background analysis and the actual visual output. By making this connection, we solve a very practical debugging problem: the system can now instantly trace any rendered line on the canvas back to the exact source line of code that produced it. 
+  </p>
+
+  <p class="body-text" style="margin-bottom: 12px;">
+    This turns the visual canvas into an excellent debugging tool, making it intuitive, educational, and fun through several key features:
+  </p>
+
+  <div class="feature-entry">
+    <div class="feature-title"><span class="ft-num">★</span> Reverse Visual Debugging</div>
+    <p>Anyone can now <strong>click any geometric stroke</strong> and instantly see the precise code that created it, bridging the semantic gap between dependence graphs and geometry.</p>
+  </div>
+  <hr class="feature-divider"/>
+
+  <div class="feature-entry">
+    <div class="feature-title"><span class="ft-num">★</span> Semantic Extraction</div>
+    <p>Isolate and extract sub-programs perfectly. For example, you can extract only the code needed to isolate all red strokes, while preserving required implicit states.</p>
+  </div>
+  <hr class="feature-divider"/>
+
+  <div class="feature-entry">
+    <div class="feature-title"><span class="ft-num">★</span> Visual Dead Code Detection &amp; Taint Tracking</div>
+    <p>Mathematically isolate instructions that execute but fail to put ink on the canvas, and modify variables to predict their downstream visual impact.</p>
+  </div>
+</div>
+
+  <div class="section">
+  <div class="sec-heading sage">
+    <span class="sec-num">03</span>
+    New AST Node: <code>ColorCommand</code>
+  </div>
+
+  <p class="body-text">
+    We extended the <code>tlang.g4</code> grammar and introduced a new instruction node in 
+    <code>ChironAST.py</code> to support color tracking throughout the pipeline.
+  </p>
+
+  <div class="code-snip">
+<span class="ck">class</span> ColorCommand(Instruction):
+    <span class="ck">def</span> __init__(self, color_name):
+        self.color = color_name   <span class="cc"># e.g. "red"</span>
+
+    <span class="ck">def</span> __str__(self):
+        <span class="ck">return</span> "color " + self.color
+  </div>
+
+  <p class="body-text">
+    The ANTLR visitor <code>visitColorCommand</code> parses the token, removes quotes,
+    and emits a standard IR tuple <code>(cmd, 1)</code>. Without this node,
+    the DFA and DDG would ignore all color-related operations.
+  </p>
+
+  <p class="body-text">
+    During analysis, a statement like <code>color "red"</code> defines the implicit
+    lattice variable <code>:__pen_color</code>. This creates a def-use chain to any
+    downstream <code>forward</code> or <code>backward</code> instruction that consumes it,
+    enabling full visual dependency tracking.
+  </p>
+</div>
+
+<div class="section">
+  <div class="sec-heading sage">
+    <span class="sec-num">04</span>
+    Source Line Tagging (<code>.sl</code>)
+  </div>
+
+  <p class="body-text">
+    Compiling to a flat Intermediate Representation (IR) removes the direct mapping
+    between source code and analysis results. To preserve this connection, we modified
+    every <code>visitXXX</code> method in <code>builder.py</code> to inject a 
+    <code>.sl</code> (source line) tag at node construction time.
+  </p>
+
+  <div class="code-snip">
+<span class="cc"># Every visitor method tags its node</span>
+cmd = ChironAST.MoveCommand(op, expr)
+cmd.sl = ctx.start.line   <span class="cc"># injected here</span>
+<span class="ck">return</span> [(cmd, 1)]
+  </div>
+
+  <p class="body-text">
+    Nodes generated during <code>repeat</code> expansion (such as loop counters,
+    conditions, and back-jumps) also inherit the enclosing loop’s source line.
+    Downstream analysis retrieves this safely using:
+  </p>
+
+  <div class="code-snip">
+sl = getattr(stmt, <span class="cs">'sl'</span>, -1)   <span class="cc"># -1 = no origin</span>
+  </div>
+
+  <div class="inset-box">
+    <strong>Bridge Role:</strong> The <code>.sl</code> tag acts as the critical link
+    between IR-level analysis and source-level visualization—enabling precise slice
+    highlighting and visual debugging without requiring re-parsing of the original code.
+  </div>
+</div>
+<div class="section">
+  <div class="sec-heading sage">
+    <span class="sec-num">05</span>
+    Implicit State as Lattice Variables
+  </div>
+
+  <p class="body-text">
+    Our key theoretical contribution is extending the Reaching Definitions DFA
+    to treat implicit graphical context as <strong>explicit named variables</strong>
+    in the lattice, alongside user-declared variables.
+  </p>
+
+  <table class="state-grid">
+    <thead>
+      <tr>
+        <th>Pseudo-Variable</th>
+        <th>Defined By</th>
+        <th>Used By</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="var-name">:__heading</td>
+        <td>left, right</td>
+        <td>forward, backward</td>
+      </tr>
+      <tr>
+        <td class="var-name">:__position</td>
+        <td>goto, fwd, bwd</td>
+        <td>forward, backward</td>
+      </tr>
+      <tr>
+        <td class="var-name">:__pen_status</td>
+        <td>penup, pendown</td>
+        <td>forward, backward</td>
+      </tr>
+      <tr>
+        <td class="var-name">:__pen_color</td>
+        <td>color "x"</td>
+        <td>forward, backward</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="body-text">
+    The transfer function explicitly writes these variables, while 
+    <code>get_used_vars()</code> reads them during movement analysis:
+  </p>
+
+  <div class="code-snip">
+<span class="ck">elif</span> isinstance(stmt, MoveCommand):
+    <span class="ck">if</span> stmt.direction <span class="ck">in</span> [<span class="cs">"forward"</span>, <span class="cs">"backward"</span>]:
+        <span class="ck">return</span> get_used_vars(stmt.expr) + [
+            <span class="cs">":__pen_color"</span>, <span class="cs">":__heading"</span>,
+            <span class="cs">":__pen_status"</span>, <span class="cs">":__position"</span>
+        ]
+    <span class="ck">elif</span> stmt.direction <span class="ck">in</span> [<span class="cs">"left"</span>, <span class="cs">"right"</span>]:
+        <span class="ck">return</span> get_used_vars(stmt.expr) + [<span class="cs">":__heading"</span>]
+  </div>
+
+  <p class="body-text">
+    This enables the DDG to construct def-use edges across graphical state.
+    For example, a <code>left</code>/<code>right</code> rotation now directly
+    influences a later <code>forward</code> instruction—even if they are
+    separated by hundreds of IR statements.
+  </p>
+</div>
+<div class="section">
+  <div class="sec-heading sage">
+    <span class="sec-num">06</span>
+    Reaching Definitions DFA
+  </div>
+
+  <p class="body-text">
+    Our analysis uses a standard <strong>forward, may-analysis</strong> worklist.
+    Each lattice element is a set of IR indices, where every index represents
+    a definition site (<code>MovementDomain = set(int)</code>).
+  </p>
+
+  <div class="code-snip">
+<span class="cc"># Worklist — Forward Reaching Definitions</span>
+Init: bbIn[START] = {}; bbIn[B] = {} ∀ B ≠ START  
+Init: bbOut[B] = [] ∀ B; enqueue all B ≠ END  
+
+<span class="ck">while</span> worklist not empty:
+    B ← dequeue()
+
+    <span class="cc"># MEET: union of predecessor OUTs</span>
+    bbIn[B] = ⋃ bbOut[P]  for P ∈ pred(B)
+
+    <span class="cc"># TRANSFER: kill + gen</span>
+    OUT = copy(bbIn[B])
+    <span class="ck">for</span> (stmt, ir_idx) <span class="ck">in</span> B.instrlist:
+        OUT[var(stmt)] = {ir_idx}
+
+    bbOut[B] = OUT
+    <span class="ck">if</span> changed(bbOut[B]): enqueue succ(B)
+  </div>
+
+  <p class="body-text">
+    The <strong>meet</strong> operator performs a set union per variable,
+    while the <strong>transfer function</strong> overwrites each variable’s
+    entry with its latest definition, implicitly killing all prior ones.
+  </p>
+
+  <div class="formula-line">
+    <span class="formula-pill pill-navy">OUT[B]</span>
+    <span class="op"> = </span>
+    <span class="formula-pill pill-teal">GEN[B]</span>
+    <span class="op"> ∪ </span>
+    <span class="formula-pill pill-sage">( IN[B] − KILL[B] )</span>
+  </div>
+
+  <p class="body-text">
+    Conditional blocks produce identical output states, allowing the analysis
+    to propagate independently along <code>Cond_True</code> and 
+    <code>Cond_False</code> branches. Our implementation integrates seamlessly
+    by overriding <code>dfaIntrp.analysis = ForwardAnalysis()</code>.
+  </p>
+</div>
+<div class="section">
+  <div class="sec-heading sage">
+    <span class="sec-num">07</span>
+    DDG &amp; CDG Construction
+  </div>
+
+  <p class="body-text" style="text-align:center; margin-bottom:10px;">
+    <span class="formula-pill pill-navy">PDG</span>
+    <span class="op"> = </span>
+    <span class="formula-pill pill-teal">DDG</span>
+    <span class="op"> ⊕ </span>
+    <span class="formula-pill pill-sage">CDG</span>
+  </p>
+
+  <p class="body-text">
+    After the DFA converges, each basic block is re-simulated instruction-by-instruction.
+    For every variable used at an IR index, a <strong>data dependence edge</strong>
+    is created from all reaching definitions.
+  </p>
+
+  <div class="code-snip">
+<span class="cc"># DDG edge construction</span>
+<span class="ck">for</span> stmt, j <span class="ck">in</span> bb.instrlist:
+    <span class="ck">for</span> v <span class="ck">in</span> get_used_vars(stmt):
+        <span class="ck">for</span> d <span class="ck">in</span> currentState[v].data:
+            ddg.add_edge(d, j, label=v)
+
+    <span class="cc"># update definition</span>
+    <span class="ck">if</span> isinstance(stmt, AssignmentCommand):
+        currentState[stmt.lvar.varname] = {j}
+  </div>
+
+  <p class="body-text">
+    The <strong>Control Dependence Graph (CDG)</strong> is constructed using
+    post-dominator frontiers computed over the <em>reversed CFG</em>.
+  </p>
+
+  <ul class="research-list">
+    <li>Add a dummy <code>START→END</code> edge to root the graph</li>
+    <li>Reverse the CFG: <code>rev_cfg = cfg.reverse(copy=True)</code></li>
+    <li>Compute dominance frontiers using <code>nx.dominance_frontiers</code></li>
+    <li>
+      For each block <code>B</code>, connect its controlling condition to all
+      instructions in blocks within its frontier
+    </li>
+    <li>Remove the dummy edge; correctly handles <code>if</code>, <code>if/else</code>, and <code>repeat</code></li>
+  </ul>
+
+  <!-- <div class="inset-box">
+    <strong>Why reverse?</strong> Post-dominance in the forward CFG is equivalent
+    to dominance in the reversed CFG—allowing reuse of existing algorithms
+    without reimplementation.
+  </div> -->
+</div>
+
+<div class="section">
+  <div class="sec-heading teal">
+    <span class="sec-num">08</span>
+    Headless Tracer
+  </div>
+
+  <p class="body-text">
+    A pure-Python turtle interpreter that executes programs with 
+    <strong>zero GUI dependencies</strong>. It maintains full turtle state
+    and produces structured outputs for downstream analysis.
+  </p>
+
+  <ul class="research-list">
+    <li>
+      <strong>trace_log</strong> — one entry per stroke:
+      <code>{x1, y1, x2, y2, ir_pc, source_line, color}</code>
+    </li>
+    <li>
+      <strong>execution_path</strong> — <code>set[int]</code> of executed IR indices,
+      enabling precise dynamic slicing
+    </li>
+  </ul>
+
+  <p class="body-text">
+    Movement is computed using standard 2D trigonometry:
+  </p>
+
+  <div class="code-snip">
+new_x = x + val * cos(radians(heading))
+new_y = y + val * sin(radians(heading))
+
+<span class="cc"># Variable mapping: :x → self.pgr.x</span>
+<span class="cc"># Evaluated dynamically via exec()/eval()</span>
+  </div>
+
+  <p class="body-text">
+    The tracer fully mirrors the <code>ConcreteInterpreter</code>, including
+    pen state, color transitions, and <code>GotoCommand</code>. By removing GUI
+    dependencies, it enables execution in CI pipelines and headless environments
+    while preserving complete semantic fidelity.
+  </p>
+
+  <!-- <div class="inset-box">
+    <strong>Why it matters:</strong> This trace is the backbone of dynamic slicing
+    and click-to-code debugging—bridging runtime behavior directly to PDG analysis.
+  </div> -->
+</div>
+
+
+
+  <!-- <div class="section">
+    <div class="sec-heading sage"><span class="sec-num">03</span>Methodology: State Modeling & Bridging</div>
+    <p class="body-text">
+      <strong>Source Line Tagging (<code>sl</code>):</strong> Because compiling to a flattened Intermediate Representation (IR) inherently strips source correspondence, we modified the AST builder to inject a <code>.sl</code> tag into every node at construction time. This crucial modification acts as the bridge that maps IR-level analysis results directly back to the user's original code.
+    </p>
+    <p class="body-text" style="margin-top: 8px;">
+      <strong>Implicit State as Lattice Variables:</strong> We extended the <code>tlang</code> grammar with the <code>color</code> command and upgraded the Reaching Definitions DFA to treat implicit graphical context as explicit variables:
+    </p>
+    
+    <table class="state-grid">
+      <thead>
+        <tr><th>Implicit Lattice Variable</th><th>Defined By (Def)</th><th>Consumed By (Use)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="var-name">:__pen_color</td><td>color "str"</td><td>forward, backward</td></tr>
+        <tr><td class="var-name">:__heading</td><td>left, right</td><td>forward, backward</td></tr>
+        <tr><td class="var-name">:__pen_status</td><td>penup, pendown</td><td>forward, backward</td></tr>
+        <tr><td class="var-name">:__position</td><td>goto, forward</td><td>forward, backward</td></tr>
+      </tbody>
+    </table> -->
+
+    <!-- <div class="code-snip">
+<span class="cc"># Inside MovementTransferFunction (submissionDFA.py)</span>
+<span class="ck">elif</span> isinstance(stmt, ChironAST.ColorCommand):
+    outState[<span class="cs">":__pen_color"</span>] = MovementDomain({ir_idx})
+    </div> -->
+
+    <!-- <p class="body-text" style="font-style:italic; font-size: 13.5px; color: var(--muted); margin-top: 12px;">
+  Injecting these hidden variables into the Worklist algorithm allows the DDG to form Def-Use chains that link canvas strokes back to commands executed.
+</p>
+<p class="body-text" style="margin-top: 14px;">
+  <strong>Defining the Visual Slicing Criterion:</strong> 
+  In classical analysis, a slicing criterion is defined as a pair <code>(statement, variable)</code>. To adapt this for geometry, we formalized a <em>visual slicing criterion</em>. When a user selects a stroke on the canvas, the criterion dynamically becomes <code>(IR_index, {__position, __heading, __pen_status, __pen_color})</code>. 
+</p>
+  </div> -->
+
+  <!-- === FIGURE 1 - FULL BLEED (no whitespace) === -->
+<!-- === FIGURE 1 - FULL BLEED (no crop, no whitespace) === -->
+<!-- <div style="flex: 1; margin: 0; padding: 0; border: none; background: transparent; width: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+  <img 
+    src="images/chiron-pipeline.jpeg" 
+    alt="Figure 1: Chiron-Slicer Pipeline Architecture" 
+    style="width: 100%; height: 100%; object-fit: contain; display: block;">
+</div>
+</div> -->
+
+<!-- <div class="figure-container" style="margin-top: auto; margin-bottom: 0;">
+  <div class="figure-full" style="margin-bottom: 4px;">
+    <img src="images/chiron-pipeline.jpeg" alt="Figure 1: Chiron-Slicer Pipeline Architecture" style="display: block; width: 100%;">
+  </div>
+  <div class="figure-caption">
+    Figure 1: Chiron-Slicer Pipeline Architecture
+  </div>
+</div> -->
+</div>
+
+
+    <!-- ════════ RIGHT COLUMN ════════ -->
+    <div class="col-right">
+<div class="section">
+  <div class="sec-heading">
+    <span class="sec-num">09</span>
+    Interactive HTML Debugger
+  </div>
+
+  <p class="body-text">
+    The pipeline's final output is a self-contained <code>interactive_slicer.html</code> —
+    no server, no runtime re-analysis needed. All slice data is precomputed at generation
+    time and JSON-embedded inside each SVG element's <code>onclick</code> attribute.
+  </p>
+
+  <!-- ✅ FIGURE (as in your image) -->
+  <div class="figure-container">
+    <div class="figure-full">
+      <img src="images/dashboard.png" alt="Interactive HTML Dashboard"style="display:block; width:90%;">
+    </div>
+    <div class="figure-caption">
+      Figure 2 — Click any canvas stroke → slices highlight instantly in source pane
+    </div>
+  </div>
+
+  <p class="body-text">
+    <strong>SVG canvas (left pane):</strong> Each stroke is a 
+    <code>&lt;line&gt;</code> element colored with the exact active color at draw time.
+    Its handler carries precomputed slice arrays:
+  </p>
+
+  <div class="code-snip">
+onclick='loadSlices(
+  5,              <span class="cc"># source line of drawing instr</span>
+  [2,3,5,7,11],   <span class="cc"># static backward slice</span>
+  [3,5,7]         <span class="cc"># dynamic backward slice</span>
+)'
+  </div>
+
+  <p class="body-text">
+    <strong>Source pane (right):</strong> Each line is a 
+    <code>&lt;div id="code-line-N"&gt;</code>. JavaScript applies
+    <code>highlight-target</code> (blue border) and 
+    <code>highlight-slice</code> (amber border) styles on click.
+  </p>
+
+  <p class="body-text">
+    Coordinate alignment is corrected using:
+    <code>svg_y = cy - turtle_y</code>
+  </p>
+</div>
+
+<div class="section">
+  <div class="sec-heading teal">
+    <span class="sec-num">10</span>
+    Static ↔ Dynamic Slice Toggle
+  </div>
+
+  <p class="body-text">
+    Users can switch between <strong>static</strong> (all-paths) and 
+    <strong>dynamic</strong> (execution-specific) slicing in real time.
+    All slice arrays are precomputed—no recomputation is required.
+  </p>
+
+  <div class="code-snip">
+<span class="ck">function</span> renderCurrentSlice() {
+  <span class="ck">const</span> mode = sliceMode.value;
+  <span class="ck">const</span> active = mode === <span class="cs">'dynamic'</span>
+      ? currentDynamicSlice
+      : currentStaticSlice;
+
+  <span class="cc">// clear old highlights</span>
+  clearHighlights();
+
+  <span class="cc">// apply new slice</span>
+  active.forEach(n => highlight(<span class="cs">'code-line-'</span> + n));
+}
+  </div>
+
+  <!-- <div class="inset-box">
+    <strong>Educational Insight:</strong> This toggle makes the difference between
+    conservative (static) and execution-precise (dynamic) slicing visually obvious.
+    Students can directly see which lines disappear when untaken branches are removed.
+  </div> -->
+</div>
+
+<div class="section">
+  <div class="sec-heading">
+    <span class="sec-num">11</span>
+    Visual Dead Code Detection
+  </div>
+
+  <p class="body-text">
+    Chiron-Slicer detects not just structurally unreachable code, but the harder
+    class of <em>visually useless code</em>—instructions that execute successfully
+    yet never contribute ink to the canvas (e.g., orphaned rotations, pen-up
+    movements, or assignments unused by any drawing command).
+  </p>
+
+  <div class="code-snip">
+<span class="cc"># Algorithm: Visual Dead Code</span>
+
+<span class="ck">1.</span> visual_pcs = {stroke.ir_pc | stroke ∈ trace_log}
+<span class="cc">   # IR indices of ink-depositing instructions</span>
+
+<span class="ck">2.</span> alive = union_slice(visual_pcs, dynamic=execution_path)
+<span class="cc">   # backward closure of all visual output</span>
+
+<span class="ck">3.</span> line_to_ir = src_line → set(IR index)
+<span class="cc">   # built from .sl tags</span>
+
+<span class="ck">4.</span> dead = {sl | ∀ idx ∈ line_to_ir[sl]: idx ∉ alive}
+<span class="cc">   # ALL-quantifier (not ANY)</span>
+  </div>
+
+  <p class="body-text">
+    The <strong>ALL-quantifier</strong> in step 4 prevents false positives from
+    <code>repeat</code> loop expansion: a single source line may generate multiple
+    IR nodes (init, condition, decrement, back-jump). A line is marked dead only
+    if <em>all</em> of its corresponding IR nodes are absent from the alive set.
+  </p>
+
+  <!-- <div class="inset-box">
+    <strong>Key Insight:</strong> Dead code is defined semantically—not by control
+    reachability, but by lack of contribution to the final rendered output.
+  </div> -->
+</div>
+
+      <!-- <div class="section">
+  <div class="sec-heading"><span class="sec-num">04</span>Trace Mapping & Reverse Debugging</div>
+  
+  <p class="body-text">
+    <strong>Headless Trace Logging:</strong> To allow analysis to run silently in the background, we built a pure-Python <em>Headless Tracer</em>. It mathematically executes the program and logs a detailed "trace". For every stroke drawn on the canvas, it records the exact coordinates alongside the Intermediate Representation (IR) instruction index that produced it.
+  </p>
+  
+  <p class="body-text" style="margin-top: 8px;">
+    <strong>Click-to-Code Mapping:</strong> When a user clicks a geometric stroke on the canvas, the dashboard reads the logged IR index and queries the Program Dependence Graph (PDG) for the backward slice. It then utilizes the <code>.sl</code> tags (injected during the compilation phase) to translate those IR instructions into instant, source-level code highlights.
+  </p> -->
+
+  <!-- <p class="body-text" style="margin-top: 8px;">
+    <strong>Interactive Visual Debugging:</strong> This infrastructure flips traditional debugging on its head. Instead of manually stepping through text line-by-line, developers can simply click any visual anomaly on the output canvas to immediately view its entire computational history.
+  </p> -->
+
+ <!-- === FIGURE 2 - FULL FILL (no inner whitespace) === -->
+<!-- <div class="figure-container">
+  <div class="figure-full" >
+    <img 
+      src="images/dashboard.png" 
+      alt="Figure 2: Interactive HTML Dashboard"
+    >
+  </div>
+  <div class="figure-caption">
+    Figure 2: Interactive HTML Dashboard – Click any stroke to see the backward slice
+  </div>
+</div>
+      </div> -->
+
+      <!-- <div class="section">
+        <div class="sec-heading teal"><span class="sec-num">05</span>Advanced Slicing Applications</div>
+        
+        <p class="body-text" style="margin-bottom: 12px; font-style: italic; color: var(--navy);">
+          Many of the advanced applications below rely on our <strong>Union Slice</strong> algorithm, which calculates and aggregates the backward slices across a target list of IR indices to isolate all instructions that contribute to a final canvas state.
+        </p>
+
+        <div class="feature-entry">
+          <div class="feature-title"><span class="ft-num">A</span>Static Soundness vs. Dynamic Precision</div>
+          <p><strong>Static Slicing</strong> computes conservative, all-paths dependencies across the PDG. <strong>Dynamic Slicing</strong> enhances precision by consuming the Headless execution trace to prune untaken branches, yielding a minimal slice reflecting the exact reality of a single execution.</p>
+        </div>
+        <hr class="feature-divider"/>
+
+        <div class="feature-entry">
+          <div class="feature-title"><span class="ft-num">B</span>Semantic Sub-Program Extraction</div>
+          <p>Computes the union backward slice of all geometry sharing a specific attribute (e.g., all <code>red</code> strokes). The graph traversal automatically strips unrelated commands while perfectly preserving the implicit rotations and states required to execute the extracted sub-program standalone.</p>
+          <div class="code-snip"><span class="ck">uv run</span> chiron.py <span class="cf">-dfa --extract-color</span> <span class="cs">red</span> script.tl</div>
+        </div>
+        <hr class="feature-divider"/>
+
+        <div class="feature-entry">
+          <div class="feature-title"><span class="ft-num">C</span>Visual Dead Code Detection</div>
+          <p>By subtracting the evaluated Union Slice of all rendered ink from the total IR instruction set, Chiron-Vis mathematically detects structurally unreachable instructions-identifying nodes that <em>execute</em> but lack a valid path to an ink-depositing node.</p>
+        </div>
+        <hr class="feature-divider"/>
+
+        <div class="feature-entry">
+          <div class="feature-title"><span class="ft-num">D</span>Forward Taint Tracking (Triple-Mode)</div>
+          <p>PDG descendant traversal tracks the downstream visual impact of state mutations with triple-mode precision: line-level, variable-level, or precise definition intersection.</p>
+          <div class="code-snip"><span class="cf">--forward-slice-line</span> <span class="cs">5</span> <span class="cf">--forward-slice-var</span> <span class="cs">:y</span></div>
+        </div>
+      </div> -->
+
+      <div class="section">
+  <div class="sec-heading sage">
+    <span class="sec-num">12</span>
+    Graph Export &amp; Sub-Program Extraction
+  </div>
+
+  <p class="body-text">
+    Chiron-Slicer exports DDG, CDG, and fused PDG as publication-quality
+    PNGs using Graphviz <code>dot</code> layout. Each node is labeled with
+    its source line number and truncated instruction text.
+  </p>
+
+  <!-- ✅ TWO FIGURES SIDE BY SIDE -->
+  <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:8px;">
+
+  <div class="figure-container" style="margin:0;">
+    <div class="figure-full">
+      <img src="images/PDG.png" alt="Fused PDG"style="display:block; width:50%; margin:0 auto;">
+    </div>
+    <div class="figure-caption">
+      Figure 3 — Fused PDG
+    </div>
+  </div>
+
+  <div class="figure-container" style="margin:0;">
+    <div class="figure-full">
+      <img src="images/color-slice.png" alt="Color Extraction Output"style="display:block; width:50%; margin:0 auto;">
+    </div>
+    <div class="figure-caption">
+      Figure 4 — Sub-program extraction
+    </div>
+  </div>
 
 </div>
+
+  <p class="body-text" style="margin-top:10px;">
+    <strong>Semantic sub-program extraction:</strong> The union backward slice
+    over all strokes of a given color produces a standalone executable program—
+    preserving required rotations and pen states while removing unrelated geometry.
+  </p>
+</div>
+
+
+      <div class="section">
+  <div class="sec-heading teal"><span class="sec-num">05</span>Advanced Slicing Applications</div>
+  
+  <p class="body-text" style="margin-bottom: 12px; font-style: italic; color: var(--navy);">
+    The engine powering these advanced tools is our <strong>Union Slice</strong> algorithm. Instead of analyzing just one stroke, it mathematically aggregates dependencies across multiple visual elements to figure out the exact subset of code required to create them.
+  </p>
+
+  <div class="feature-entry">
+    <div class="feature-title"><span class="ft-num">A</span>Static vs. Dynamic Precision</div>
+    <p><strong>Static Slicing</strong> gives a conservative, "all possible paths" view of the code's history. <strong>Dynamic Slicing</strong> is much sharper: it uses our trace logs to filter out conditional branches that were never actually taken, showing the student exactly what happened during that specific run.</p>
+  </div>
+  <hr class="feature-divider"/>
+
+  <div class="feature-entry">
+    <div class="feature-title"><span class="ft-num">B</span>Semantic Sub-Program Extraction</div>
+    <p>Imagine wanting to isolate only the code that drew the <code>red</code> strokes. Chiron-Slicer calculates the union slice for those specific shapes, automatically stripping away unrelated code while perfectly preserving the hidden rotations and pen states needed to run that extracted sub-program entirely on its own.</p>
+    <div class="code-snip"><span class="ck">uv run</span> chiron.py <span class="cf">-dfa --extract-color</span> <span class="cs">red</span> script.tl</div>
+  </div>
+  <hr class="feature-divider"/>
+
+  <div class="feature-entry">
+    <div class="feature-title"><span class="ft-num">C</span>Visual Dead Code Detection</div>
+    <p>Traditional tools only flag code with structural errors. Chiron-Slicer detects code that <em>successfully executes</em> but fails to ever put ink on the canvas (like orphaned rotations or pen-up movements). We mathematically isolate these useless instructions by subtracting the "alive" visual code from the total program.</p>
+  </div>
+  <hr class="feature-divider"/>
+
+  <div class="feature-entry">
+    <div class="feature-title"><span class="ft-num">D</span>Forward Taint Tracking</div>
+    <p>While backward slicing asks "what caused this stroke?", forward tracking asks "what will changing this variable affect downstream?". By traversing forward through the graph, we can predict and highlight the exact visual impact of mutating a specific state or line of code.</p>
+    <div class="code-snip"><span class="cf">--forward-slice-line</span> <span class="cs">5</span> <span class="cf">--forward-slice-var</span> <span class="cs">:y</span></div>
+  </div>
+</div>
+      <!-- <div class="section" style="margin-top:14px;">
+  <div class="sec-heading sage"><span class="sec-num">06</span>Visualizing the Underlying Math</div>
+  
+  <p class="body-text">
+    To expose the raw compiler theory for educational use, Chiron-Slicer natively exports DDG, CDG, and fused PDG diagrams. 
+  </p>
+
+  <p class="body-text" style="margin-top: 8px;">
+    Using Graphviz, the framework automatically filters out isolated nodes and applies human-readable styling. This provides a clear, "under-the-hood" view, allowing anyone to study the exact dependencies that make visual slicing possible.
+  </p>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items: stretch;">
+  
+  <div class="figure-container" style="margin: 0; display: flex; flex-direction: column;">
+    <div class="figure-full" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; background: #fff;">
+      <img src="images/PDG.png" alt="Fused PDG" style="width: 100%; height: auto; display: block; object-fit: contain;">
+    </div>
+    <div class="figure-caption">Figure 3: Fused PDG</div>
+  </div>
+
+  <div class="figure-container" style="margin: 0; display: flex; flex-direction: column;">
+    <div class="figure-full" style="flex-grow: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; background: #fff;">
+      <img src="images/color-slice.png" alt="Extraction Output" style="width: 100%; height: auto; display: block; object-fit: contain;">
+    </div>
+    <div class="figure-caption">Figure 4: Extraction Output</div>
+  </div>
+  
+</div>
+      </div> -->
+<div class="section">
+  <div class="sec-heading">
+    <span class="sec-num">13</span>
+    Pipeline Summary &amp; Contributions
+  </div>
+
+  <!-- PIPELINE FLOW -->
+  <div class="pipeline-row">
+    <div class="pipe-box">Source .tl<span class="pipe-sub">Grammar + .sl</span></div>
+    <div class="pipe-arrow-sm">›</div>
+    <div class="pipe-box teal">DFA<span class="pipe-sub">Implicit Vars</span></div>
+    <div class="pipe-arrow-sm">›</div>
+    <div class="pipe-box sage">DDG ⊕ CDG<span class="pipe-sub">PDG Fusion</span></div>
+    <div class="pipe-arrow-sm">›</div>
+    <div class="pipe-box gold">Slicer<span class="pipe-sub">4 Modes</span></div>
+    <div class="pipe-arrow-sm">›</div>
+    <div class="pipe-box">HTML<span class="pipe-sub">Debugger</span></div>
+  </div>
+
+  <ul class="research-list" style="margin-top:10px;">
+    <li>
+      <strong>Implicit-state lattice:</strong> Graphical turtle state modeled as
+      DFA variables enabling cross-command dependencies
+    </li>
+    <li>
+      <strong>Visual slicing criterion:</strong> Formalized as
+      <code>(IR_idx, {__pos, __hdg, __pen, __color})</code>
+    </li>
+    <li>
+      <strong>Dual-mode debugger:</strong> Static and dynamic slices embedded in
+      SVG <code>onclick</code> for instant switching
+    </li>
+    <li>
+      <strong>ALL-quantifier dead-code rule:</strong> Eliminates false positives
+      from <code>repeat</code> expansion
+    </li>
+    <li>
+      <strong>GUI-free execution:</strong> Headless tracer enables CI and
+      large-scale automated analysis
+    </li>
+  </ul>
+</div>
+<!-- <div class="figure-container" style="margin-top: auto; margin-bottom: 0;">
+  <div class="figure-full" style="margin-bottom: 4px;">
+    <img src="images/chiron-pipeline.jpeg" alt="Figure 1: Chiron-Slicer Pipeline Architecture" style="display: block; width: 100%;">
+  </div>
+  <div class="figure-caption">
+    Figure 1: Chiron-Slicer Pipeline Architecture
+  </div>
+</div> -->
+    </div>
+    <!-- ════════ UPDATED RIGHT COLUMN ════════ -->
+<!-- <div class="col-right">
+  <div class="section">
+    <div class="sec-heading"><span class="sec-num">04</span>Key Ideas Used in the Implementation</div>
+    <p class="body-text">We compile the enhanced AST into a unified <strong>Program Dependence Graph (PDG)</strong> by fusing two orthogonal sub-graphs:</p>
+    <div class="formula-line">
+      <span class="formula-pill pill-navy">PDG</span>
+      <span class="op"> = </span>
+      <span class="formula-pill pill-teal">DDG</span>
+      <span class="op"> ⊕ </span>
+      <span class="formula-pill pill-sage">CDG</span>
+    </div>
+    <div class="pipeline-row">
+      <div class="pipe-box">Extended AST<span class="pipe-sub">Front-end + Line Tagging</span></div>
+      <div class="pipe-arrow-sm">›</div>
+      <div class="pipe-box teal">Stateful DFA<span class="pipe-sub">Worklist + Lattice Vars</span></div>
+      <div class="pipe-arrow-sm">›</div>
+      <div class="pipe-box sage">CDG / DDG<span class="pipe-sub">Sub-graphs</span></div>
+      <div class="pipe-arrow-sm">›</div>
+      <div class="pipe-box gold">Fused PDG<span class="pipe-sub">Slicer Engine</span></div>
+    </div>
+    <p class="body-text" style="margin-top:8px;">
+      <strong>Data Dependence (DDG):</strong> Tracks all Def-Use chains, including the novel graphical lattice variables.<br>
+      <strong>Control Dependence (CDG):</strong> Computed via Post-Dominance Frontiers on the reversed CFG.
+    </p>
+    <p class="body-text">
+      Additional key ideas: Headless Tracer (maps every SVG stroke to its PDG node), static vs. dynamic slicing, forward taint tracking, and semantic sub-program extraction.
+    </p>
+  </div>
+
+  <div class="section">
+    <div class="sec-heading teal"><span class="sec-num">05</span>Interactive Reverse Visual Debugging</div>
+    <p class="body-text">
+      Chiron-Vis flips traditional debugging: instead of stepping through code to see the canvas, you click the canvas to see the code. The Headless Tracer silently executes the IR and builds a precise stroke-to-PDG mapping.
+    </p>
+    <p class="body-text">
+      Clicking any geometric element instantly triggers a backward slice, highlights the responsible AST nodes, and dims visually dead code in the source view.
+    </p>
+    <div class="img-placeholder" style="height: 240px; border: 2px solid var(--navy); background: #fff;">
+      <div class="ph-icon">🖥️</div>
+      <div class="ph-label">[ Figure 2: Interactive HTML Dashboard ]</div>
+      <div class="ph-desc">Click a stroke on the SVG canvas (left) → backward slice is automatically highlighted in the source AST (right).</div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:14px;">
+    <div class="sec-heading sage"><span class="sec-num">06</span>Advanced Applications &amp; Output Illustrations</div>
+    <div class="feature-entry">
+      <div class="feature-title"><span class="ft-num">A</span>Static vs. Dynamic Slicing</div>
+      <p>Static slicing uses the full PDG; dynamic slicing prunes untaken paths using the headless execution trace for minimal, execution-exact slices.</p>
+    </div>
+    <hr class="feature-divider"/>
+    <div class="feature-entry">
+      <div class="feature-title"><span class="ft-num">B</span>Semantic Sub-Program Extraction</div>
+      <p>Extract a standalone sub-program containing only geometry of a chosen color (e.g., all red strokes) while preserving required implicit state.</p>
+      <div class="code-snip"><span class="ck">uv run</span> chiron.py <span class="cf">-dfa --extract-color</span> <span class="cs">red</span> script.tl</div>
+    </div>
+    <hr class="feature-divider"/>
+    <div class="feature-entry">
+      <div class="feature-title"><span class="ft-num">C</span>Visual Dead Code Detection</div>
+      <p>Identifies instructions that execute but do not affect any ink (orphaned rotations, pen-up moves) by checking PDG reachability to ink-depositing nodes.</p>
+    </div>
+    <hr class="feature-divider"/>
+    <div class="feature-entry">
+      <div class="feature-title"><span class="ft-num">D</span>Forward Taint Tracking</div>
+      <p>Triple-mode forward slicing (line / variable / definition) tracks downstream visual impact of any state change.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+      <div class="img-placeholder ph-medium">
+        <div class="ph-icon">📊</div>
+        <div class="ph-label">[ Figure 3: Fused PDG ]</div>
+        <div class="ph-desc">Graphviz export showing data (red) and control (grey) dependence edges.</div>
+      </div>
+      <div class="img-placeholder ph-medium">
+        <div class="ph-icon">🐢</div>
+        <div class="ph-label">[ Figure 4: Color-Sliced Output ]</div>
+        <div class="ph-desc">Canvas result of a semantically extracted sub-program (e.g., only red geometry).</div>
+      </div>
+    </div>
+  </div>
+</div> -->
+  </div><!-- end body -->
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="poster-footer">
+    <div class="footer-ref">
+  <span>[1] Ottenstein & Ottenstein, <em>The Program Dependence Graph in a Software Development Environment</em>, SIGPLAN 1984.</span>
+  <span>[2] Cytron et al., <em>Efficiently Computing Static Single Assignment Form and the Control Dependence Graph</em>, ACM TOPLAS 1991.</span>
+  <span>[3] Agrawal & Horgan, <em>Dynamic Program Slicing</em>, PLDI 1990.</span>
+</div>
+    <div class="footer-contact">
+      <!-- PRAISE Research Group · IIT Kanpur<br/>
+      surge@iitk.ac.in<br/> -->
+      github.com/abhijeeta21/CS335-Chiron-Slicer
+    </div>
+  </footer>
+
+</div><!-- end poster -->
 </body>
 </html>

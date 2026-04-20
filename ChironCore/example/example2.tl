@@ -20,10 +20,12 @@ repeat 1 [
 	pendown
 	repeat 6 [
 		if (:vara != :varb) [
+			color "red"
 			if ( :vara > :varb) [ right :vara ]
 			else [ left :varb ]
 		]
 		else [
+			color "blue"
 		 if ((:vara <= :varc) || (:varb <= :varc)) [
 			:vara = :varc / :vara
 			:varb = :varb / :varc

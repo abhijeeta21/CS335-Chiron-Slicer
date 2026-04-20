@@ -1,6 +1,5 @@
-:x = 5
-:y = :x + 3
+penup
+forward 50
+forward 25
 pendown
-forward :y
-left 90
-forward :x
+forward 30

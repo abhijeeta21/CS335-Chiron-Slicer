@@ -256,6 +256,9 @@ if __name__ == "__main__":
     # ==========================================================
     # --- PHASE 2: SEMANTIC COLOR EXTRACTION ---
     # ==========================================================
+    # ==========================================================
+    # --- PHASE 2: SEMANTIC COLOR EXTRACTION ---
+    # ==========================================================
     if args.extract_color:
         print(f"\n[COLOR EXTRACT] Extracting the '{args.extract_color}' sub-program...")
         import html_tracer
@@ -269,18 +272,17 @@ if __name__ == "__main__":
             print(f"No shapes were drawn in {args.extract_color}.")
         else:
             slicer = ChironSlicer(irHandler)
-            # Slice backward from ALL of those movements simultaneously, dynamically!
-            color_slice_ir = slicer.get_union_slice(color_ir_pcs, dynamic_trace=tracer.execution_path)
             
-            source_lines = sorted(list(set(getattr(irHandler.ir[i][0], 'sl', -1) for i in color_slice_ir)))
-            source_lines = [l for l in source_lines if l != -1]
+            # --- UPGRADE: Use the Pen-Muting Visual Slicer Engine ---
+            color_slice_code = slicer.get_visual_slice_code(
+                target_ir_indices=color_ir_pcs, 
+                original_file_path=args.progfl, 
+                dynamic_trace=tracer.execution_path
+            )
             
-            print(f"\n--- Resulting Semantic Sub-Program (Original Lines: {len(source_lines)}) ---")
-            with open(args.progfl, 'r') as f:
-                raw_code = f.readlines()
-            for s_line in source_lines:
-                actual_text = raw_code[s_line - 1].strip() if s_line <= len(raw_code) else "<hidden>"
-                print(f"[Line {s_line:02d}] : {actual_text}")
+            print(f"\n--- Resulting Semantic Sub-Program (Color: {args.extract_color}) ---")
+            for line in color_slice_code:
+                print(line)
 
     # ==========================================================
     # --- PHASE 2: STATIC SLICING EXECUTION ---
@@ -295,13 +297,17 @@ if __name__ == "__main__":
             print(f"[Error plotting graphs]: {e}\n(Make sure you have matplotlib installed: 'pip install matplotlib')")
 
     # Backward Slicing execution (NOW SUPPORTS BOTH MODES)
+    # ==========================================================
+    # --- PHASE 2: STATIC SLICING EXECUTION ---
+    # ==========================================================
+    
+    # Backward Slicing execution (NOW SUPPORTS VISUAL ISOLATION)
     if args.slice_line is not None:
         
-        # Determine which mode the user wants
         if args.slice_var:
             print(f"\n[BACKWARD SLICE] Mode 1: Tracing variable '{args.slice_var}' at Source Line {args.slice_line}...")
         else:
-            print(f"\n[BACKWARD SLICE] Mode 2: Tracing full statement-level slice for Source Line {args.slice_line}...")
+            print(f"\n[BACKWARD SLICE] Mode 2: Tracing full visual slice for Source Line {args.slice_line}...")
             
         target_ir_indices = [idx for idx, (stmt, jmp) in enumerate(irHandler.ir) if getattr(stmt, 'sl', -1) == args.slice_line]
         
@@ -313,26 +319,38 @@ if __name__ == "__main__":
             
             dynamic_trace = None
             if args.dynamic:
-                # We must run the program to get the exact dynamic trace!
                 import html_tracer
                 tracer = html_tracer.HeadlessTracer(irHandler, args.params)
                 tracer.run()
                 dynamic_trace = tracer.execution_path
             
-            # Pass the trace (or None if static) into the slicer
-            backward_slice_ir = slicer.get_backward_slice(target_idx, args.slice_var, dynamic_trace=dynamic_trace)
-            
-            if backward_slice_ir:
-                source_lines = sorted(list(set(getattr(irHandler.ir[i][0], 'sl', -1) for i in backward_slice_ir)))
-                source_lines = [l for l in source_lines if l != -1] 
-                print(f"\n--- Resulting Code Slice (Total Original Lines: {len(source_lines)}) ---")
+            # MODE 1: Variable Data Slice (Standard Mathematical Print)
+            if args.slice_var:
+                backward_slice_ir = slicer.get_backward_slice(target_idx, args.slice_var, dynamic_trace=dynamic_trace)
                 
-                with open(args.progfl, 'r') as f:
-                    raw_code = f.readlines()
-                for s_line in source_lines:
-                    prefix = ">>" if s_line == args.slice_line else "  "
-                    actual_text = raw_code[s_line - 1].strip() if s_line <= len(raw_code) else "<hidden>"
-                    print(f"{prefix} [Line {s_line:02d}] : {actual_text}")
+                if backward_slice_ir:
+                    source_lines = sorted(list(set(getattr(irHandler.ir[i][0], 'sl', -1) for i in backward_slice_ir)))
+                    source_lines = [l for l in source_lines if l != -1] 
+                    print(f"\n--- Resulting Variable Trace (Total Original Lines: {len(source_lines)}) ---")
+                    
+                    with open(args.progfl, 'r') as f:
+                        raw_code = f.readlines()
+                    for s_line in source_lines:
+                        prefix = ">>" if s_line == args.slice_line else "  "
+                        actual_text = raw_code[s_line - 1].strip() if s_line <= len(raw_code) else "<hidden>"
+                        print(f"{prefix} [Line {s_line:02d}] : {actual_text}")
+                        
+            # MODE 2: Visual Statement Slice (Uses Pen-Muting Engine)
+            else:
+                visual_slice_code = slicer.get_visual_slice_code(
+                    target_ir_indices=[target_idx],
+                    original_file_path=args.progfl,
+                    dynamic_trace=dynamic_trace
+                )
+                
+                print(f"\n--- Resulting Visual Code Slice ---")
+                for line in visual_slice_code:
+                    print(line)
 
 # --- UPGRADED FORWARD SLICING (Triple-Mode Support) ---
     if args.forward_slice_var or args.forward_slice_line is not None:
