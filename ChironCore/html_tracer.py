@@ -625,11 +625,9 @@ window.addEventListener('mouseup', e => {{
     selectedLines.clear();
 
     if (w < 4 && h < 4) {{
-        const cr = {{ left: e.clientX-8, right: e.clientX+8, top: e.clientY-8, bottom: e.clientY+8 }};
-        document.querySelectorAll('.turtle-stroke').forEach(s => {{
-            if (rectsHit(cr, s.getBoundingClientRect()))
-                selectedLines.add(+s.getAttribute('data-line'));
-        }});
+        if (e.target && e.target.classList.contains('turtle-stroke')) {{
+            selectedLines.add(+e.target.getAttribute('data-line'));
+        }}
     }} else {{
         document.querySelectorAll('.turtle-stroke').forEach(s => {{
             if (rectsHit(br, s.getBoundingClientRect()))
