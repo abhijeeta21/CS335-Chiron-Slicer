@@ -324,9 +324,19 @@ svg#cvs {
 
     <div id="canvas-body">
         <svg id="cvs" viewBox="0 0 600 600" width="600" height="600">
-            <line x1="300.00" y1="300.00" x2="425.00" y2="300.00" stroke="#4ade80" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="5"></line>
-<line x1="425.00" y1="300.00" x2="511.60" y2="250.00" stroke="#4ade80" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="8"></line>
-<line x1="511.60" y1="250.00" x2="411.60" y2="250.00" stroke="#4ade80" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="12"></line>
+            <line x1="300.00" y1="300.00" x2="380.00" y2="300.00" stroke="red" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="4" data-trace-id="4"></line>
+<line x1="380.00" y1="300.00" x2="380.00" y2="380.00" stroke="red" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="4" data-trace-id="9"></line>
+<line x1="380.00" y1="380.00" x2="300.00" y2="380.00" stroke="red" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="4" data-trace-id="14"></line>
+<line x1="300.00" y1="380.00" x2="300.00" y2="300.00" stroke="red" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="4" data-trace-id="19"></line>
+<line x1="500.00" y1="300.00" x2="580.00" y2="300.00" stroke="blue" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="12" data-trace-id="30"></line>
+<line x1="580.00" y1="300.00" x2="540.00" y2="369.28" stroke="blue" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="12" data-trace-id="35"></line>
+<line x1="540.00" y1="369.28" x2="500.00" y2="300.00" stroke="blue" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="12" data-trace-id="40"></line>
+<line x1="300.00" y1="100.00" x2="380.00" y2="100.00" stroke="green" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="20" data-trace-id="51"></line>
+<line x1="380.00" y1="100.00" x2="420.00" y2="169.28" stroke="green" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="20" data-trace-id="56"></line>
+<line x1="420.00" y1="169.28" x2="380.00" y2="238.56" stroke="green" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="20" data-trace-id="61"></line>
+<line x1="380.00" y1="238.56" x2="300.00" y2="238.56" stroke="green" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="20" data-trace-id="66"></line>
+<line x1="300.00" y1="238.56" x2="260.00" y2="169.28" stroke="green" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="20" data-trace-id="71"></line>
+<line x1="260.00" y1="169.28" x2="300.00" y2="100.00" stroke="green" stroke-width="4" stroke-linecap="round" class="turtle-stroke" data-line="20" data-trace-id="76"></line>
 
             <rect id="sel-box"></rect>
         </svg>
@@ -362,21 +372,31 @@ svg#cvs {
     <div class="cp" id="orig-panel">
         <div class="cp-header">
             <span class="cp-title">Original source</span>
-            <span class="cp-badge" id="orig-badge">12 lines</span>
+            <span class="cp-badge" id="orig-badge">22 lines</span>
         </div>
         <div class="cp-scroll" id="orig-scroll">
-            <div id="code-line-1" class="code-line"><span class="ln">01</span><span class="ct">:seed = 25</span></div>
-<div id="code-line-2" class="code-line"><span class="ln">02</span><span class="ct">:unrelated = 30</span></div>
-<div id="code-line-3" class="code-line"><span class="ln">03</span><span class="ct"></span></div>
-<div id="code-line-4" class="code-line"><span class="ln">04</span><span class="ct">:a = :seed * 5</span></div>
-<div id="code-line-5" class="code-line"><span class="ln">05</span><span class="ct">forward :a</span></div>
-<div id="code-line-6" class="code-line"><span class="ln">06</span><span class="ct"></span></div>
-<div id="code-line-7" class="code-line"><span class="ln">07</span><span class="ct">left :unrelated</span></div>
-<div id="code-line-8" class="code-line"><span class="ln">08</span><span class="ct">forward 100</span></div>
-<div id="code-line-9" class="code-line"><span class="ln">09</span><span class="ct"></span></div>
-<div id="code-line-10" class="code-line"><span class="ln">10</span><span class="ct">:b = 100</span></div>
-<div id="code-line-11" class="code-line"><span class="ln">11</span><span class="ct">right :unrelated</span></div>
-<div id="code-line-12" class="code-line"><span class="ln">12</span><span class="ct">backward :b</span></div>
+            <div id="code-line-1" class="code-line"><span class="ln">01</span><span class="ct">:side = 80</span></div>
+<div id="code-line-2" class="code-line"><span class="ln">02</span><span class="ct">color "red"</span></div>
+<div id="code-line-3" class="code-line"><span class="ln">03</span><span class="ct">repeat 4 [</span></div>
+<div id="code-line-4" class="code-line"><span class="ln">04</span><span class="ct">    forward :side</span></div>
+<div id="code-line-5" class="code-line"><span class="ln">05</span><span class="ct">    right 90</span></div>
+<div id="code-line-6" class="code-line"><span class="ln">06</span><span class="ct">]</span></div>
+<div id="code-line-7" class="code-line"><span class="ln">07</span><span class="ct">penup</span></div>
+<div id="code-line-8" class="code-line"><span class="ln">08</span><span class="ct">goto (200, 0)</span></div>
+<div id="code-line-9" class="code-line"><span class="ln">09</span><span class="ct">pendown</span></div>
+<div id="code-line-10" class="code-line"><span class="ln">10</span><span class="ct">color "blue"</span></div>
+<div id="code-line-11" class="code-line"><span class="ln">11</span><span class="ct">repeat 3 [</span></div>
+<div id="code-line-12" class="code-line"><span class="ln">12</span><span class="ct">    forward :side</span></div>
+<div id="code-line-13" class="code-line"><span class="ln">13</span><span class="ct">    right 120</span></div>
+<div id="code-line-14" class="code-line"><span class="ln">14</span><span class="ct">]</span></div>
+<div id="code-line-15" class="code-line"><span class="ln">15</span><span class="ct">penup</span></div>
+<div id="code-line-16" class="code-line"><span class="ln">16</span><span class="ct">goto (0, 200)</span></div>
+<div id="code-line-17" class="code-line"><span class="ln">17</span><span class="ct">pendown</span></div>
+<div id="code-line-18" class="code-line"><span class="ln">18</span><span class="ct">color "green"</span></div>
+<div id="code-line-19" class="code-line"><span class="ln">19</span><span class="ct">repeat 6 [</span></div>
+<div id="code-line-20" class="code-line"><span class="ln">20</span><span class="ct">    forward :side</span></div>
+<div id="code-line-21" class="code-line"><span class="ln">21</span><span class="ct">    right 60</span></div>
+<div id="code-line-22" class="code-line"><span class="ln">22</span><span class="ct">]</span></div>
 
         </div>
     </div>
@@ -402,15 +422,16 @@ svg#cvs {
 /* ════════════════════════════════════════
    Data injected from Python
 ════════════════════════════════════════ */
-const sliceDB    = {"5": {"static": {"targets": [5], "ghosts": [], "logic": [1, 4]}, "dynamic": {"targets": [5], "ghosts": [], "logic": [1, 4]}}, "8": {"static": {"targets": [8], "ghosts": [5, 7], "logic": [1, 2, 4]}, "dynamic": {"targets": [8], "ghosts": [5, 7], "logic": [1, 2, 4]}}, "12": {"static": {"targets": [12], "ghosts": [8, 11, 5, 7], "logic": [1, 2, 10, 4]}, "dynamic": {"targets": [12], "ghosts": [8, 11, 5, 7], "logic": [1, 2, 10, 4]}}};
-const deadLines  = [];
-const srcLines   = [":seed = 25", ":unrelated = 30", "", ":a = :seed * 5", "forward :a", "", "left :unrelated", "forward 100", "", ":b = 100", "right :unrelated", "backward :b"];   // 0-indexed: srcLines[0] = source line 1
-const totalLines = 12;
+const sliceDB    = {"4": {"static": {"targets": [4], "ghosts": [5], "logic": [1, 2, 3, 6]}, "dynamic": {"targets": [4], "ghosts": [], "logic": [1, 2, 3]}, "source_line": 4}, "9": {"static": {"targets": [4], "ghosts": [5], "logic": [1, 2, 3, 6]}, "dynamic": {"targets": [4], "ghosts": [5], "logic": [1, 2, 3, 6]}, "source_line": 4}, "14": {"static": {"targets": [4], "ghosts": [5], "logic": [1, 2, 3, 6]}, "dynamic": {"targets": [4], "ghosts": [5], "logic": [1, 2, 3, 6]}, "source_line": 4}, "19": {"static": {"targets": [4], "ghosts": [5], "logic": [1, 2, 3, 6]}, "dynamic": {"targets": [4], "ghosts": [5], "logic": [1, 2, 3, 6]}, "source_line": 4}, "30": {"static": {"targets": [12], "ghosts": [8, 13, 5], "logic": [1, 3, 6, 9, 10, 11, 14]}, "dynamic": {"targets": [12], "ghosts": [8, 5], "logic": [1, 3, 6, 9, 10, 11]}, "source_line": 12}, "35": {"static": {"targets": [12], "ghosts": [8, 13, 5], "logic": [1, 3, 6, 9, 10, 11, 14]}, "dynamic": {"targets": [12], "ghosts": [8, 13, 5], "logic": [1, 3, 6, 9, 10, 11, 14]}, "source_line": 12}, "40": {"static": {"targets": [12], "ghosts": [8, 13, 5], "logic": [1, 3, 6, 9, 10, 11, 14]}, "dynamic": {"targets": [12], "ghosts": [8, 13, 5], "logic": [1, 3, 6, 9, 10, 11, 14]}, "source_line": 12}, "51": {"static": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "dynamic": {"targets": [20], "ghosts": [16, 13, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19]}, "source_line": 20}, "56": {"static": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "dynamic": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "source_line": 20}, "61": {"static": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "dynamic": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "source_line": 20}, "66": {"static": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "dynamic": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "source_line": 20}, "71": {"static": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "dynamic": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "source_line": 20}, "76": {"static": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "dynamic": {"targets": [20], "ghosts": [16, 13, 21, 5], "logic": [1, 3, 6, 11, 14, 17, 18, 19, 22]}, "source_line": 20}};
+const deadLines  = [7, 15];
+const srcLines   = [":side = 80", "color \"red\"", "repeat 4 [", "    forward :side", "    right 90", "]", "penup", "goto (200, 0)", "pendown", "color \"blue\"", "repeat 3 [", "    forward :side", "    right 120", "]", "penup", "goto (0, 200)", "pendown", "color \"green\"", "repeat 6 [", "    forward :side", "    right 60", "]"];   // 0-indexed: srcLines[0] = source line 1
+const totalLines = 22;
 
 /* ════════════════════════════════════════
    State
 ════════════════════════════════════════ */
-let selectedLines = new Set();
+// NEW: We track selected trace IDs instead of static lines
+let selectedTraceIds = new Set();
 let aggStatic  = null;
 let aggDynamic = null;
 
@@ -467,20 +488,20 @@ window.addEventListener('mouseup', e => {
     const br = selBox.getBoundingClientRect(); 
     
     selBox.style.display = 'none';
-    selectedLines.clear();
+    selectedTraceIds.clear(); // Clear the trace set
 
     if (w < 4 && h < 4) {
         if (e.target && e.target.classList.contains('turtle-stroke')) {
-            selectedLines.add(+e.target.getAttribute('data-line'));
+            selectedTraceIds.add(+e.target.getAttribute('data-trace-id'));
         }
     } else {
         document.querySelectorAll('.turtle-stroke').forEach(s => {
             if (rectsHit(br, s.getBoundingClientRect()))
-                selectedLines.add(+s.getAttribute('data-line'));
+                selectedTraceIds.add(+s.getAttribute('data-trace-id'));
         });
     }
 
-    if (selectedLines.size > 0) aggregateSlices();
+    if (selectedTraceIds.size > 0) aggregateSlices();
     else clearAll();
 });
 
@@ -491,8 +512,8 @@ function aggregateSlices() {
     const S = { targets: new Set(), ghosts: new Set(), logic: new Set() };
     const D = { targets: new Set(), ghosts: new Set(), logic: new Set() };
 
-    selectedLines.forEach(ln => {
-        const d = sliceDB[ln];
+    selectedTraceIds.forEach(t_id => {
+        const d = sliceDB[t_id]; // Look up by trace_id!
         if (!d) return;
         ['targets','ghosts','logic'].forEach(k => {
             d.static[k].forEach(v  => S[k].add(v));
@@ -515,7 +536,7 @@ function aggregateSlices() {
    Clear
 ════════════════════════════════════════ */
 function clearAll() {
-    selectedLines.clear();
+    selectedTraceIds.clear(); // Update this variable name
     aggStatic = aggDynamic = null;
     document.querySelectorAll('.code-line').forEach(el =>
         el.classList.remove('highlight-target','highlight-logic','highlight-ghost'));
@@ -559,8 +580,8 @@ function renderCurrentSlice() {
 
     // ── SVG stroke styling ──
     document.querySelectorAll('.turtle-stroke').forEach(el => {
-        const ln = +el.getAttribute('data-line');
-        const isSel = selectedLines.has(ln);
+        const t_id = +el.getAttribute('data-trace-id');
+        const isSel = selectedTraceIds.has(t_id);
         el.style.opacity     = isSel ? '1'  : '0.18';
         el.style.strokeWidth = isSel ? '7'  : '4';
     });
@@ -574,7 +595,7 @@ function renderCurrentSlice() {
 
     // ── status strip ──
     const modeLabel = mode === 'dynamic' ? 'dynamic' : 'static';
-    const selCount  = selectedLines.size;
+    const selCount  = selectedTraceIds.size;
     document.getElementById('status-text').textContent =
         selCount + ' stroke' + (selCount > 1 ? 's' : '') + ' selected · ' +
         sliceCount + ' lines in ' + modeLabel + ' slice';

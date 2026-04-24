@@ -3,6 +3,10 @@ import os
 import json
 from ChironAST import ChironAST
 from slicer import ChironSlicer
+import sys
+# Ensure we can reach the Submission folder
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Submission')))
+from submissionDFA import get_used_vars
 
 # =========================================================================
 # HeadlessTracer — unchanged
@@ -17,30 +21,47 @@ class HeadlessTracer:
         self.current_color = "#4ade80"
 
         self.trace_log = []
-        self.execution_path = set()
+        # NEW: Now stores rich Trace Nodes instead of integers
+        self.execution_path = [] 
+        self.trace_counter = 0    # Acts as our unique clock tick
 
         for key, val in params.items():
             setattr(self.prg, key.replace(":", ""), val)
 
     def addContext(self, s):
-        return str(s).strip().replace(":", "self.prg.")
+        s_str = str(s).strip().replace(":", "self.prg.")
+        return s_str.replace("pendown?", "self.is_pendown")
 
     def run(self):
         while self.pc < len(self.ir):
-            self.execution_path.add(self.pc)
+            # self.execution_path.append(self.pc)
             stmt, tgt = self.ir[self.pc]
             ntgt = 1
             source_line = getattr(stmt, 'sl', -1)
 
+            # --- 1. DYNAMIC DEPENDENCE EXTRACTION ---
+            # We statically extract what this instruction uses (Reads)
+            current_uses = get_used_vars(stmt)
+            current_defs = [] # We will populate this based on instruction type
+
+            # [NEW] Re-introduce Visual Dependencies for drawing commands!
+            if isinstance(stmt, ChironAST.MoveCommand) and stmt.direction in ["forward", "backward"]:
+                current_uses.extend([":__pen_color", ":__pen_status"])
+            elif isinstance(stmt, ChironAST.GotoCommand):
+                current_uses.extend([":__pen_color", ":__pen_status"])
+
             if isinstance(stmt, ChironAST.AssignmentCommand):
                 lhs = str(stmt.lvar).replace(":", "")
                 exec(f"setattr(self.prg, '{lhs}', {self.addContext(stmt.rexpr)})")
+                current_defs.append(f":{lhs}") # It defines the variable
             elif isinstance(stmt, ChironAST.ConditionCommand):
                 ntgt = 1 if eval(self.addContext(stmt)) else tgt
             elif isinstance(stmt, ChironAST.ColorCommand):
                 self.current_color = stmt.color
+                current_defs.append(":__pen_color")
             elif isinstance(stmt, ChironAST.PenCommand):
                 self.is_pendown = (stmt.status == "pendown")
+                current_defs.append(":__pen_status")
             elif isinstance(stmt, ChironAST.GotoCommand):
                 new_x = eval(self.addContext(stmt.xcor))
                 new_y = eval(self.addContext(stmt.ycor))
@@ -51,6 +72,7 @@ class HeadlessTracer:
                         'color': self.current_color
                     })
                 self.x, self.y = new_x, new_y
+                current_defs.append(":__position")
             elif isinstance(stmt, ChironAST.MoveCommand):
                 val = eval(self.addContext(stmt.expr))
                 new_x, new_y = self.x, self.y
@@ -68,10 +90,30 @@ class HeadlessTracer:
                     self.trace_log.append({
                         'x1': self.x, 'y1': self.y, 'x2': new_x, 'y2': new_y,
                         'source_line': source_line, 'ir_pc': self.pc,
-                        'color': self.current_color
+                        'color': self.current_color,
+                        'trace_id': self.trace_counter # <-- TAG VISUALS WITH TRACE ID
                     })
                 self.x, self.y = new_x, new_y
+
+                if stmt.direction in ["left", "right"]:
+                    current_defs.append(":__heading")
+                else:
+                    current_defs.append(":__position")
+
+            # --- 2. RECORD THE TRACE INSTANCE ---
+            trace_node = {
+                "trace_id": self.trace_counter,
+                "ir_pc": self.pc,
+                "source_line": source_line,
+                "uses": current_uses,
+                "defs": current_defs,
+                "stmt_type": type(stmt).__name__ # Useful for the slicer later
+            }
+            self.execution_path.append(trace_node)
+            
+            # --- 3. ADVANCE THE CLOCKS ---
             self.pc += ntgt
+            self.trace_counter += 1
 
 
 # =========================================================================
@@ -121,6 +163,7 @@ def generate_dashboard(irHandler, progfl, params):
     ]
 
     # --- Build SVG strokes & slice database ---
+    # --- Build SVG strokes & slice database ---
     SVG_W, SVG_H = 600, 600
     cx, cy = SVG_W / 2, SVG_H / 2
     svg_lines = ""
@@ -129,20 +172,30 @@ def generate_dashboard(irHandler, progfl, params):
     for stroke in tracer.trace_log:
         sx1, sy1 = cx + stroke['x1'], cy - stroke['y1']
         sx2, sy2 = cx + stroke['x2'], cy - stroke['y2']
-        s_line, ir_pc, c_color = stroke['source_line'], stroke['ir_pc'], stroke['color']
+        
+        s_line = stroke['source_line']
+        ir_pc = stroke['ir_pc']
+        c_color = stroke['color']
+        t_id = stroke['trace_id']  # <-- NEW: Grab the specific execution instance
 
-        if s_line not in slice_database:
+        # Instead of keying by source line, we key by the exact trace ID
+        if t_id not in slice_database:
+            # Static slice still uses the static ir_pc
             static_ir  = slicer.get_backward_slice(ir_pc, visual_targets=[ir_pc])
-            dynamic_ir = slicer.get_backward_slice(ir_pc, dynamic_trace=tracer.execution_path, visual_targets=[ir_pc])
-            slice_database[s_line] = {
+            
+            # Dynamic slice uses our NEW lightning-fast linear sweep!
+            dynamic_ir = slicer.get_dynamic_instance_slice([t_id], tracer.execution_path) 
+            
+            slice_database[t_id] = {
                 "static":  categorize_slice(static_ir,  ir_pc, irHandler),
                 "dynamic": categorize_slice(dynamic_ir, ir_pc, irHandler),
+                "source_line": s_line # Save this so the UI knows which line to highlight as the target
             }
 
         svg_lines += (
             f'<line x1="{sx1:.2f}" y1="{sy1:.2f}" x2="{sx2:.2f}" y2="{sy2:.2f}" '
             f'stroke="{c_color}" stroke-width="4" stroke-linecap="round" '
-            f'class="turtle-stroke" data-line="{s_line}"></line>\n'
+            f'class="turtle-stroke" data-line="{s_line}" data-trace-id="{t_id}"></line>\n' # <-- INJECT trace-id into HTML
         )
 
     # --- Read source file for both panels ---
@@ -565,7 +618,8 @@ const totalLines = {total_lines};
 /* ════════════════════════════════════════
    State
 ════════════════════════════════════════ */
-let selectedLines = new Set();
+// NEW: We track selected trace IDs instead of static lines
+let selectedTraceIds = new Set();
 let aggStatic  = null;
 let aggDynamic = null;
 
@@ -622,20 +676,20 @@ window.addEventListener('mouseup', e => {{
     const br = selBox.getBoundingClientRect(); 
     
     selBox.style.display = 'none';
-    selectedLines.clear();
+    selectedTraceIds.clear(); // Clear the trace set
 
     if (w < 4 && h < 4) {{
         if (e.target && e.target.classList.contains('turtle-stroke')) {{
-            selectedLines.add(+e.target.getAttribute('data-line'));
+            selectedTraceIds.add(+e.target.getAttribute('data-trace-id'));
         }}
     }} else {{
         document.querySelectorAll('.turtle-stroke').forEach(s => {{
             if (rectsHit(br, s.getBoundingClientRect()))
-                selectedLines.add(+s.getAttribute('data-line'));
+                selectedTraceIds.add(+s.getAttribute('data-trace-id'));
         }});
     }}
 
-    if (selectedLines.size > 0) aggregateSlices();
+    if (selectedTraceIds.size > 0) aggregateSlices();
     else clearAll();
 }});
 
@@ -646,8 +700,8 @@ function aggregateSlices() {{
     const S = {{ targets: new Set(), ghosts: new Set(), logic: new Set() }};
     const D = {{ targets: new Set(), ghosts: new Set(), logic: new Set() }};
 
-    selectedLines.forEach(ln => {{
-        const d = sliceDB[ln];
+    selectedTraceIds.forEach(t_id => {{
+        const d = sliceDB[t_id]; // Look up by trace_id!
         if (!d) return;
         ['targets','ghosts','logic'].forEach(k => {{
             d.static[k].forEach(v  => S[k].add(v));
@@ -670,7 +724,7 @@ function aggregateSlices() {{
    Clear
 ════════════════════════════════════════ */
 function clearAll() {{
-    selectedLines.clear();
+    selectedTraceIds.clear(); // Update this variable name
     aggStatic = aggDynamic = null;
     document.querySelectorAll('.code-line').forEach(el =>
         el.classList.remove('highlight-target','highlight-logic','highlight-ghost'));
@@ -714,8 +768,8 @@ function renderCurrentSlice() {{
 
     // ── SVG stroke styling ──
     document.querySelectorAll('.turtle-stroke').forEach(el => {{
-        const ln = +el.getAttribute('data-line');
-        const isSel = selectedLines.has(ln);
+        const t_id = +el.getAttribute('data-trace-id');
+        const isSel = selectedTraceIds.has(t_id);
         el.style.opacity     = isSel ? '1'  : '0.18';
         el.style.strokeWidth = isSel ? '7'  : '4';
     }});
@@ -729,7 +783,7 @@ function renderCurrentSlice() {{
 
     // ── status strip ──
     const modeLabel = mode === 'dynamic' ? 'dynamic' : 'static';
-    const selCount  = selectedLines.size;
+    const selCount  = selectedTraceIds.size;
     document.getElementById('status-text').textContent =
         selCount + ' stroke' + (selCount > 1 ? 's' : '') + ' selected · ' +
         sliceCount + ' lines in ' + modeLabel + ' slice';
@@ -838,3 +892,207 @@ function escH(s) {{
         f.write(html)
     print(f"[SUCCESS] Dashboard written to {out_path}")
     print(f"          {total_lines} source lines · {len(tracer.trace_log)} strokes · {len(slice_database)} slices precomputed")
+
+# =========================================================================
+# generate_dual_dashboard — NEW: Dual-Canvas Animated Demo
+# =========================================================================
+def generate_dual_dashboard(irHandler_orig, irHandler_sliced, progfl_orig, progfl_sliced, params):
+    print("[HTML TRACER] Running dynamic execution on Original program...")
+    tracer_orig = HeadlessTracer(irHandler_orig, params)
+    tracer_orig.run()
+    
+    print("[HTML TRACER] Running dynamic execution on Sliced program...")
+    tracer_sliced = HeadlessTracer(irHandler_sliced, params)
+    tracer_sliced.run()
+
+    # --- Read Source Files ---
+    with open(progfl_orig, 'r') as f:
+        raw_lines_orig = f.readlines()
+    with open(progfl_sliced, 'r') as f:
+        raw_lines_sliced = f.readlines()
+
+    # --- Prepare Data for Javascript Injection ---
+    import json
+    data = {
+        "orig_trace": tracer_orig.trace_log,
+        "sliced_trace": tracer_sliced.trace_log,
+        "orig_code": [l.rstrip() for l in raw_lines_orig],
+        "sliced_code": [l.rstrip() for l in raw_lines_sliced]
+    }
+    
+    json_data = json.dumps(data)
+    
+    SVG_W, SVG_H = 400, 400
+    cx, cy = SVG_W / 2, SVG_H / 2
+
+    # --- HTML & JS Template ---
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chiron Dual Slicer Demo</title>
+<style>
+/* ── reset ── */
+*, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+body {{
+    display: flex; height: 100vh; width: 100vw; overflow: hidden;
+    background: #0f0f0f; color: #c8c8c8;
+    font-family: 'JetBrains Mono', 'Cascadia Code', monospace; font-size: 13px;
+}}
+
+/* ── layout ── */
+.panel {{ flex: 1; display: flex; flex-direction: column; border-right: 1px solid #333; }}
+.header {{ padding: 10px; background: #161616; border-bottom: 1px solid #333; text-align: center; }}
+.header h2 {{ font-size: 14px; color: #60a5fa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }}
+.canvas-wrapper {{ flex: 0 0 {SVG_H}px; display: flex; justify-content: center; align-items: center; background: #1e1e1e; border-bottom: 1px solid #333; }}
+svg {{ background: #252525; border-radius: 4px; border: 1px solid #333; }}
+
+/* ── controls ── */
+.controls {{ padding: 10px; background: #161616; border-bottom: 1px solid #333; display: flex; justify-content: center; gap: 10px; }}
+button {{ background: #252525; color: #c8c8c8; border: 1px solid #555; padding: 5px 15px; cursor: pointer; border-radius: 3px; font-family: inherit; }}
+button:hover {{ background: #333; border-color: #888; }}
+.playback-status {{ margin-left: 15px; color: #888; font-size: 11px; align-self: center; }}
+
+/* ── code scroll ── */
+.code-scroll {{ flex: 1; overflow-y: auto; padding: 10px 0; background: #0f0f0f; }}
+.code-scroll::-webkit-scrollbar {{ width: 5px; }}
+.code-scroll::-webkit-scrollbar-thumb {{ background: #333; border-radius: 3px; }}
+.code-line {{ display: flex; padding: 2px 10px; border-left: 3px solid transparent; transition: background 0.1s; white-space: pre; }}
+.ln {{ width: 35px; color: #555; text-align: right; padding-right: 10px; user-select: none; flex-shrink: 0; }}
+.ct {{ flex: 1; }}
+.highlight-active {{ background: #0a1f38; border-left-color: #60a5fa; }}
+.highlight-active .ln {{ color: #60a5fa; }}
+</style>
+</head>
+<body>
+
+<div class="panel">
+    <div class="header">
+        <h2>Original Execution</h2>
+    </div>
+    <div class="canvas-wrapper">
+        <svg id="svg-orig" viewBox="0 0 {SVG_W} {SVG_H}" width="{SVG_W}" height="{SVG_H}"></svg>
+    </div>
+    <div class="controls">
+        <button onclick="play('orig')">▶ Play</button>
+        <button onclick="pause('orig')">⏸ Pause</button>
+        <button onclick="reset('orig')">↺ Reset</button>
+        <span class="playback-status" id="status-orig">Step: 0</span>
+    </div>
+    <div class="code-scroll" id="code-orig"></div>
+</div>
+
+<div class="panel">
+    <div class="header">
+        <h2>Extracted Color Slice</h2>
+    </div>
+    <div class="canvas-wrapper">
+        <svg id="svg-sliced" viewBox="0 0 {SVG_W} {SVG_H}" width="{SVG_W}" height="{SVG_H}"></svg>
+    </div>
+    <div class="controls">
+        <button onclick="play('sliced')">▶ Play</button>
+        <button onclick="pause('sliced')">⏸ Pause</button>
+        <button onclick="reset('sliced')">↺ Reset</button>
+        <span class="playback-status" id="status-sliced">Step: 0</span>
+    </div>
+    <div class="code-scroll" id="code-sliced"></div>
+</div>
+
+<script>
+// --- 1. Load Data ---
+const data = {json_data};
+const cx = {cx};
+const cy = {cy};
+
+// --- 2. Initialize UI ---
+function escapeHTML(s) {{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }}
+
+function buildCodePanel(lines, containerId, prefix) {{
+    const container = document.getElementById(containerId);
+    let html = '';
+    lines.forEach((line, idx) => {{
+        html += `<div class="code-line" id="line-${{prefix}}-${{idx + 1}}"><span class="ln">${{idx + 1}}</span><span class="ct">${{escapeHTML(line)}}</span></div>`;
+    }});
+    container.innerHTML = html;
+}}
+
+function buildSVG(trace, svgId, prefix) {{
+    const svg = document.getElementById(svgId);
+    let html = '';
+    trace.forEach((stroke, idx) => {{
+        const sx1 = cx + stroke.x1, sy1 = cy - stroke.y1;
+        const sx2 = cx + stroke.x2, sy2 = cy - stroke.y2;
+        html += `<line id="stroke-${{prefix}}-${{idx}}" x1="${{sx1}}" y1="${{sy1}}" x2="${{sx2}}" y2="${{sy2}}" stroke="${{stroke.color}}" stroke-width="4" stroke-linecap="round" style="display: none;"></line>`;
+    }});
+    svg.innerHTML = html;
+}}
+
+buildCodePanel(data.orig_code, 'code-orig', 'orig');
+buildCodePanel(data.sliced_code, 'code-sliced', 'sliced');
+buildSVG(data.orig_trace, 'svg-orig', 'orig');
+buildSVG(data.sliced_trace, 'svg-sliced', 'sliced');
+
+// --- 3. Animation Engine ---
+const state = {{
+    orig:   {{ step: 0, playing: false, interval: null, max: data.orig_trace.length }},
+    sliced: {{ step: 0, playing: false, interval: null, max: data.sliced_trace.length }}
+}};
+
+function highlightCode(prefix, lineNum) {{
+    if (lineNum === -1) return;
+    document.querySelectorAll(`[id^="line-${{prefix}}-"]`).forEach(el => el.classList.remove('highlight-active'));
+    const lineEl = document.getElementById(`line-${{prefix}}-${{lineNum}}`);
+    if (lineEl) {{
+        lineEl.classList.add('highlight-active');
+        lineEl.scrollIntoView({{ block: 'center', behavior: 'smooth' }});
+    }}
+}}
+
+function renderStep(prefix) {{
+    const s = state[prefix];
+    if (s.step < s.max) {{
+        document.getElementById(`stroke-${{prefix}}-${{s.step}}`).style.display = 'block';
+        const traceData = prefix === 'orig' ? data.orig_trace : data.sliced_trace;
+        highlightCode(prefix, traceData[s.step].source_line);
+        document.getElementById(`status-${{prefix}}`).innerText = `Step: ${{s.step + 1}} / ${{s.max}}`;
+    }}
+}}
+
+function play(prefix) {{
+    const s = state[prefix];
+    if (s.playing) return;
+    if (s.step >= s.max) reset(prefix);
+    
+    s.playing = true;
+    s.interval = setInterval(() => {{
+        renderStep(prefix);
+        s.step++;
+        if (s.step >= s.max) pause(prefix);
+    }}, 400); // 400ms per stroke (Much easier to watch)
+}}
+
+function pause(prefix) {{
+    state[prefix].playing = false;
+    clearInterval(state[prefix].interval);
+}}
+
+function reset(prefix) {{
+    pause(prefix);
+    state[prefix].step = 0;
+    
+    // Hide strokes for this panel
+    document.querySelectorAll(`[id^="stroke-${{prefix}}-"]`).forEach(el => el.style.display = 'none');
+    // Remove highlights
+    document.querySelectorAll(`[id^="line-${{prefix}}-"]`).forEach(el => el.classList.remove('highlight-active'));
+    // Reset status
+    document.getElementById(`status-${{prefix}}`).innerText = `Step: 0`;
+}}
+</script>
+</body>
+</html>
+    """
+    
+    out_path = "demo_slicer.html"
+    with open(out_path, "w") as f:
+        f.write(html)
+    print(f"[SUCCESS] Dual Dashboard written to {out_path}")

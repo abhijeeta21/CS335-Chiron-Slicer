@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chiron Dual Slicer Demo</title>
+<style>
+/* ── reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    display: flex; height: 100vh; width: 100vw; overflow: hidden;
+    background: #0f0f0f; color: #c8c8c8;
+    font-family: 'JetBrains Mono', 'Cascadia Code', monospace; font-size: 13px;
+}
+
+/* ── layout ── */
+.panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #333; }
+.header { padding: 10px; background: #161616; border-bottom: 1px solid #333; text-align: center; }
+.header h2 { font-size: 14px; color: #60a5fa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+.canvas-wrapper { flex: 0 0 400px; display: flex; justify-content: center; align-items: center; background: #1e1e1e; border-bottom: 1px solid #333; }
+svg { background: #252525; border-radius: 4px; border: 1px solid #333; }
+
+/* ── controls ── */
+.controls { padding: 10px; background: #161616; border-bottom: 1px solid #333; display: flex; justify-content: center; gap: 10px; }
+button { background: #252525; color: #c8c8c8; border: 1px solid #555; padding: 5px 15px; cursor: pointer; border-radius: 3px; font-family: inherit; }
+button:hover { background: #333; border-color: #888; }
+.playback-status { margin-left: 15px; color: #888; font-size: 11px; align-self: center; }
+
+/* ── code scroll ── */
+.code-scroll { flex: 1; overflow-y: auto; padding: 10px 0; background: #0f0f0f; }
+.code-scroll::-webkit-scrollbar { width: 5px; }
+.code-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+.code-line { display: flex; padding: 2px 10px; border-left: 3px solid transparent; transition: background 0.1s; white-space: pre; }
+.ln { width: 35px; color: #555; text-align: right; padding-right: 10px; user-select: none; flex-shrink: 0; }
+.ct { flex: 1; }
+.highlight-active { background: #0a1f38; border-left-color: #60a5fa; }
+.highlight-active .ln { color: #60a5fa; }
+</style>
+</head>
+<body>
+
+<div class="panel">
+    <div class="header">
+        <h2>Original Execution</h2>
+    </div>
+    <div class="canvas-wrapper">
+        <svg id="svg-orig" viewBox="0 0 400 400" width="400" height="400"></svg>
+    </div>
+    <div class="controls">
+        <button onclick="play('orig')">▶ Play</button>
+        <button onclick="pause('orig')">⏸ Pause</button>
+        <button onclick="reset('orig')">↺ Reset</button>
+        <span class="playback-status" id="status-orig">Step: 0</span>
+    </div>
+    <div class="code-scroll" id="code-orig"></div>
+</div>
+
+<div class="panel">
+    <div class="header">
+        <h2>Extracted Color Slice</h2>
+    </div>
+    <div class="canvas-wrapper">
+        <svg id="svg-sliced" viewBox="0 0 400 400" width="400" height="400"></svg>
+    </div>
+    <div class="controls">
+        <button onclick="play('sliced')">▶ Play</button>
+        <button onclick="pause('sliced')">⏸ Pause</button>
+        <button onclick="reset('sliced')">↺ Reset</button>
+        <span class="playback-status" id="status-sliced">Step: 0</span>
+    </div>
+    <div class="code-scroll" id="code-sliced"></div>
+</div>
+
+<script>
+// --- 1. Load Data ---
+const data = {"orig_trace": [{"x1": 0.0, "y1": 0.0, "x2": 10.0, "y2": 0.0, "source_line": 1, "ir_pc": 0, "color": "#4ade80"}, {"x1": 10.0, "y1": 0.0, "x2": 10.000000000000004, "y2": 50.0, "source_line": 5, "ir_pc": 4, "color": "yellow"}, {"x1": 10.000000000000004, "y1": 50.0, "x2": 12, "y2": 15, "source_line": 6, "ir_pc": 5, "color": "yellow"}, {"x1": 12, "y1": 15, "x2": 12.000000000000004, "y2": 65.0, "source_line": 8, "ir_pc": 7, "color": "blue"}], "sliced_trace": [{"x1": 12, "y1": 15, "x2": 12.000000000000004, "y2": 65.0, "source_line": 8, "ir_pc": 7, "color": "blue"}], "orig_code": ["forward 10", "left 90", "color \"yellow\"", "pendown", "forward 50", "goto (12,15)", "color \"blue\"", "forward 50"], "sliced_code": ["penup", "left 90", "pendown", "penup", "goto (12,15)", "color \"blue\"", "pendown", "forward 50"]};
+const cx = 200.0;
+const cy = 200.0;
+
+// --- 2. Initialize UI ---
+function escapeHTML(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function buildCodePanel(lines, containerId, prefix) {
+    const container = document.getElementById(containerId);
+    let html = '';
+    lines.forEach((line, idx) => {
+        html += `<div class="code-line" id="line-${prefix}-${idx + 1}"><span class="ln">${idx + 1}</span><span class="ct">${escapeHTML(line)}</span></div>`;
+    });
+    container.innerHTML = html;
+}
+
+function buildSVG(trace, svgId, prefix) {
+    const svg = document.getElementById(svgId);
+    let html = '';
+    trace.forEach((stroke, idx) => {
+        const sx1 = cx + stroke.x1, sy1 = cy - stroke.y1;
+        const sx2 = cx + stroke.x2, sy2 = cy - stroke.y2;
+        html += `<line id="stroke-${prefix}-${idx}" x1="${sx1}" y1="${sy1}" x2="${sx2}" y2="${sy2}" stroke="${stroke.color}" stroke-width="4" stroke-linecap="round" style="display: none;"></line>`;
+    });
+    svg.innerHTML = html;
+}
+
+buildCodePanel(data.orig_code, 'code-orig', 'orig');
+buildCodePanel(data.sliced_code, 'code-sliced', 'sliced');
+buildSVG(data.orig_trace, 'svg-orig', 'orig');
+buildSVG(data.sliced_trace, 'svg-sliced', 'sliced');
+
+// --- 3. Animation Engine ---
+const state = {
+    orig:   { step: 0, playing: false, interval: null, max: data.orig_trace.length },
+    sliced: { step: 0, playing: false, interval: null, max: data.sliced_trace.length }
+};
+
+function highlightCode(prefix, lineNum) {
+    if (lineNum === -1) return;
+    document.querySelectorAll(`[id^="line-${prefix}-"]`).forEach(el => el.classList.remove('highlight-active'));
+    const lineEl = document.getElementById(`line-${prefix}-${lineNum}`);
+    if (lineEl) {
+        lineEl.classList.add('highlight-active');
+        lineEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+}
+
+function renderStep(prefix) {
+    const s = state[prefix];
+    if (s.step < s.max) {
+        document.getElementById(`stroke-${prefix}-${s.step}`).style.display = 'block';
+        const traceData = prefix === 'orig' ? data.orig_trace : data.sliced_trace;
+        highlightCode(prefix, traceData[s.step].source_line);
+        document.getElementById(`status-${prefix}`).innerText = `Step: ${s.step + 1} / ${s.max}`;
+    }
+}
+
+function play(prefix) {
+    const s = state[prefix];
+    if (s.playing) return;
+    if (s.step >= s.max) reset(prefix);
+    
+    s.playing = true;
+    s.interval = setInterval(() => {
+        renderStep(prefix);
+        s.step++;
+        if (s.step >= s.max) pause(prefix);
+    }, 400); // 400ms per stroke (Much easier to watch)
+}
+
+function pause(prefix) {
+    state[prefix].playing = false;
+    clearInterval(state[prefix].interval);
+}
+
+function reset(prefix) {
+    pause(prefix);
+    state[prefix].step = 0;
+    
+    // Hide strokes for this panel
+    document.querySelectorAll(`[id^="stroke-${prefix}-"]`).forEach(el => el.style.display = 'none');
+    // Remove highlights
+    document.querySelectorAll(`[id^="line-${prefix}-"]`).forEach(el => el.classList.remove('highlight-active'));
+    // Reset status
+    document.getElementById(`status-${prefix}`).innerText = `Step: 0`;
+}
+</script>
+</body>
+</html>
+    

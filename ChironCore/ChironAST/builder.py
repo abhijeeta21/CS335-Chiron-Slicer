@@ -42,23 +42,27 @@ class astGenPass(tlangVisitor):
         lval = ChironAST.Var(ctx.VAR().getText())
         rval = self.visit(ctx.expression())
         cmd = ChironAST.AssignmentCommand(lval, rval)
-        cmd.sl = ctx.start.line # <-- Tag original line
+        cmd.sl = ctx.start.line 
+        cmd.ctx = ctx # <--- ADD THIS TO EVERY METHOD
         return [(cmd, 1)]
 
     def visitIfConditional(self, ctx:tlangParser.IfConditionalContext):
         condObj = ChironAST.ConditionCommand(self.visit(ctx.condition()))
         condObj.sl = ctx.start.line
+        condObj.ctx = ctx # <--- ADD THIS
         thenInstrList = self.visit(ctx.strict_ilist())
         return [(condObj, len(thenInstrList) + 1)] + thenInstrList
 
     def visitIfElseConditional(self, ctx:tlangParser.IfElseConditionalContext):
         condObj = ChironAST.ConditionCommand(self.visit(ctx.condition()))
         condObj.sl = ctx.start.line
+        condObj.ctx = ctx # <--- ADD THIS (Tags the IF check)
         thenInstrList = self.visit(ctx.strict_ilist(0))
         elseInstrList = self.visit(ctx.strict_ilist(1))
         
         boolFalse = ChironAST.ConditionCommand(ChironAST.BoolFalse())
         boolFalse.sl = ctx.start.line
+        boolFalse.ctx = ctx # <--- ADD THIS (Tags the synthetic jump)
         jumpOverElseBlock = [(boolFalse, len(elseInstrList) + 1)]
         return [(condObj, len(thenInstrList) + 2)] + thenInstrList + jumpOverElseBlock + elseInstrList
 
@@ -67,6 +71,7 @@ class astGenPass(tlangVisitor):
         ycor = self.visit(ctx.expression(1))
         cmd = ChironAST.GotoCommand(xcor, ycor)
         cmd.sl = ctx.start.line
+        cmd.ctx = ctx # <--- ADD THIS
         return [(cmd, 1)]
 
     # Visit a parse tree produced by tlangParser#unaryExpr.
@@ -159,16 +164,19 @@ class astGenPass(tlangVisitor):
         counterVar = ChironAST.Var(":__rep_counter_" + str(self.repeatInstrCount))
         
         counterVarInitInstr = ChironAST.AssignmentCommand(counterVar, repeatNum)
-        counterVarInitInstr.sl = ctx.start.line # Tag injected init
+        counterVarInitInstr.sl = ctx.start.line
+        counterVarInitInstr.ctx = ctx # <--- ADD THIS
         
         constZero = ChironAST.Num(0)
         constOne = ChironAST.Num(1)
         
         loopCond = ChironAST.ConditionCommand(ChironAST.GT(counterVar, constZero))
-        loopCond.sl = ctx.start.line # Tag injected condition
+        loopCond.sl = ctx.start.line 
+        loopCond.ctx = ctx # <--- ADD THIS
         
         counterVarDecrInstr = ChironAST.AssignmentCommand(counterVar, ChironAST.Diff(counterVar, constOne))
-        counterVarDecrInstr.sl = ctx.start.line # Tag injected decrement
+        counterVarDecrInstr.sl = ctx.stop.line 
+        counterVarDecrInstr.ctx = ctx # <--- ADD THIS
 
         thenInstrList = []
         for instr in ctx.strict_ilist().instruction():
@@ -176,7 +184,8 @@ class astGenPass(tlangVisitor):
             thenInstrList.extend(temp)
 
         boolFalse = ChironAST.ConditionCommand(ChironAST.BoolFalse())
-        boolFalse.sl = ctx.start.line
+        boolFalse.sl = ctx.stop.line
+        boolFalse.ctx = ctx # <--- ADD THIS
         return [(counterVarInitInstr, 1), (loopCond, len(thenInstrList) + 3)] + thenInstrList +\
             [(counterVarDecrInstr, 1), (boolFalse, -len(thenInstrList) - 2)]
 
@@ -185,18 +194,24 @@ class astGenPass(tlangVisitor):
         mvexpr = self.visit(ctx.expression())
         cmd = ChironAST.MoveCommand(mvcommand, mvexpr)
         cmd.sl = ctx.start.line
+        cmd.ctx = ctx # <--- ADD THIS
         return [(cmd, 1)]
 
     def visitPenCommand(self, ctx:tlangParser.PenCommandContext):
         cmd = ChironAST.PenCommand(ctx.getText())
         cmd.sl = ctx.start.line
+        cmd.ctx = ctx # <--- ADD THIS
         return [(cmd, 1)]
 
     def visitColorCommand(self, ctx:tlangParser.ColorCommandContext):
-            # ctx.STRING().getText() returns '"red"'
-            # .strip('"') turns it into pure 'red'
-            clean_color = ctx.STRING().getText().strip('"') 
-            
-            cmd = ChironAST.ColorCommand(clean_color)
-            cmd.sl = ctx.start.line
-            return [(cmd, 1)]
+        clean_color = ctx.STRING().getText().strip('"') 
+        cmd = ChironAST.ColorCommand(clean_color)
+        cmd.sl = ctx.start.line
+        cmd.ctx = ctx # <--- ADD THIS
+        return [(cmd, 1)]
+
+    def visitPauseCommand(self, ctx:tlangParser.PauseCommandContext):
+        cmd = ChironAST.PauseCommand()
+        cmd.sl = ctx.start.line
+        cmd.ctx = ctx  # Tag it for the slicer
+        return [(cmd, 1)]

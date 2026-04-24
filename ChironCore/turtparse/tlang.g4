@@ -99,4 +99,4 @@ VAR  : ':'[a-zA-Z_] [a-zA-Z0-9]* ;
 NAME : [a-zA-Z]+     ;
 STRING : '"' ~["]* '"' ;
 
-Whitespace: [ \t\n\r]+ -> skip;
+Whitespace: [ \t\n\r]+ -> channel(HIDDEN);

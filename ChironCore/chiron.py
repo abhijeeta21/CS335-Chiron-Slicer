@@ -207,6 +207,9 @@ if __name__ == "__main__":
     cmdparser.add_argument("--plot-graphs", action="store_true", help="Generate PNG images of the DDG, CDG, and PDG") # <-- ADD THIS
     cmdparser.add_argument("--extract-color", help="Extract a sub-program that only draws a specific color", type=str)
     cmdparser.add_argument("--dynamic", action="store_true", help="Use dynamic execution trace for slicing instead of static")
+    # Add this near your other Phase 2/3 arguments in chiron.py
+    # Change this line in chiron.py
+    cmdparser.add_argument("--demo-html", action="store_true", help="Generate side-by-side animated HTML demo for the chosen slicing mode")
     # -----------------------------------------------
 
     args = cmdparser.parse_args()
@@ -280,9 +283,27 @@ if __name__ == "__main__":
                 dynamic_trace=tracer.execution_path
             )
             
-            print(f"\n--- Resulting Semantic Sub-Program (Color: {args.extract_color}) ---")
-            for line in color_slice_code:
-                print(line)
+            if args.demo_html:
+                print(f"[DEMO HTML] Compiling color slice and launching Dual-Canvas Demo...")
+                temp_slice_path = "temp_demo_slice.tl"
+                with open(temp_slice_path, "w") as f:
+                    f.write("\n".join(color_slice_code))
+                    
+                parseTree_sliced = getParseTree(temp_slice_path)
+                astgen_sliced = astGenPass()
+                ir_sliced = astgen_sliced.visitStart(parseTree_sliced)
+                irHandler_sliced = IRHandler(ir_sliced)
+                
+                import html_tracer
+                html_tracer.generate_dual_dashboard(irHandler, irHandler_sliced, args.progfl, temp_slice_path, args.params)
+                
+                import os
+                if os.path.exists(temp_slice_path):
+                    os.remove(temp_slice_path)
+            else:
+                print(f"\n--- Resulting Semantic Sub-Program (Color: {args.extract_color}) ---")
+                for line in color_slice_code:
+                    print(line)
 
     # ==========================================================
     # --- PHASE 2: STATIC SLICING EXECUTION ---
@@ -326,29 +347,47 @@ if __name__ == "__main__":
             
             # MODE 1: Variable Data Slice (Standard Mathematical Print)
             if args.slice_var:
+                print(f"\n[BACKWARD SLICE] Mode 1: Tracing variable '{args.slice_var}' at Source Line {args.slice_line}...")
                 backward_slice_ir = slicer.get_backward_slice(target_idx, args.slice_var, dynamic_trace=dynamic_trace)
                 
-                if backward_slice_ir:
-                    source_lines = sorted(list(set(getattr(irHandler.ir[i][0], 'sl', -1) for i in backward_slice_ir)))
-                    source_lines = [l for l in source_lines if l != -1] 
-                    print(f"\n--- Resulting Variable Trace (Total Original Lines: {len(source_lines)}) ---")
-                    
-                    with open(args.progfl, 'r') as f:
-                        raw_code = f.readlines()
-                    for s_line in source_lines:
-                        prefix = ">>" if s_line == args.slice_line else "  "
-                        actual_text = raw_code[s_line - 1].strip() if s_line <= len(raw_code) else "<hidden>"
-                        print(f"{prefix} [Line {s_line:02d}] : {actual_text}")
+                # Use the pen-muting engine to render the math slice visually
+                visual_slice_code = slicer.get_visual_slice_code(
+                    target_ir_indices=backward_slice_ir, 
+                    original_file_path=args.progfl,
+                    dynamic_trace=dynamic_trace
+                )
                         
-            # MODE 2: Visual Statement Slice (Uses Pen-Muting Engine)
+            # MODE 2: Visual Statement Slice
+                        
             else:
+                print(f"\n[BACKWARD SLICE] Mode 2: Tracing full visual slice for Source Line {args.slice_line}...")
                 visual_slice_code = slicer.get_visual_slice_code(
                     target_ir_indices=[target_idx],
                     original_file_path=args.progfl,
                     dynamic_trace=dynamic_trace
                 )
+
+            # --- UNIVERSAL DEMO ROUTER ---
+            if args.demo_html:
+                print(f"[DEMO HTML] Compiling slice and launching Dual-Canvas Demo...")
+                temp_slice_path = "temp_demo_slice.tl"
+                with open(temp_slice_path, "w") as f:
+                    f.write("\n".join(visual_slice_code))
+                    
+                parseTree_sliced = getParseTree(temp_slice_path)
+                astgen_sliced = astGenPass()
+                ir_sliced = astgen_sliced.visitStart(parseTree_sliced)
+                irHandler_sliced = IRHandler(ir_sliced)
                 
-                print(f"\n--- Resulting Visual Code Slice ---")
+                import html_tracer
+                html_tracer.generate_dual_dashboard(irHandler, irHandler_sliced, args.progfl, temp_slice_path, args.params)
+                
+                import os
+                if os.path.exists(temp_slice_path):
+                    os.remove(temp_slice_path)
+            else:
+                # Standard console output if --demo-html is not used
+                print(f"\n--- Resulting Code Slice ---")
                 for line in visual_slice_code:
                     print(line)
 
@@ -409,6 +448,7 @@ if __name__ == "__main__":
     if args.html:
         import html_tracer
         html_tracer.generate_dashboard(irHandler, args.progfl, args.params)
+    
 
     if args.dump_ir:
         irHandler.pretty_print(irHandler.ir)

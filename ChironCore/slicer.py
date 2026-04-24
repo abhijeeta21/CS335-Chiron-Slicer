@@ -2,6 +2,12 @@ import networkx as nx
 from ChironAST import ChironAST
 import os
 
+from antlr4 import FileStream, CommonTokenStream
+from antlr4.TokenStreamRewriter import TokenStreamRewriter
+
+# Import your generated lexer
+from turtparse.tlangLexer import tlangLexer
+
 class ChironSlicer:
     def __init__(self, irHandler):
         self.irHandler = irHandler
@@ -17,32 +23,48 @@ class ChironSlicer:
 
 
     def build_cdg(self):
-        print("--- Building Control Dependence Graph (CDG) ---")
+        print("--- Building Control Dependence Graph (CDG) [Post-Dominator Theory] ---")
         cdg = nx.DiGraph()
         cdg.add_nodes_from(range(self.ir_length))
 
-        # The base ChironCFG drops unconditional jumps, breaking dominance frontiers.
-        # We bypass it and build the CDG natively from IR Jump Offsets.
-        for idx, (stmt, tgt) in enumerate(self.irHandler.ir):
-            if isinstance(stmt, ChironAST.ConditionCommand):
-                # The jump target covers the TRUE block.
-                for c_idx in range(idx + 1, idx + tgt):
-                    if c_idx < self.ir_length:
-                        cdg.add_edge(idx, c_idx, label="Control")
+        # 1. Extract the native NetworkX CFG
+        cfg_nx = self.cfg.nxgraph
+        
+        # 2. Locate the END node (Required for reverse-dominator calculations)
+        end_node = next((n for n in cfg_nx.nodes() if n.name == 'END'), None)
+        if not end_node:
+            raise RuntimeError("CFG missing END node. Cannot compute Post-Dominators.")
+
+        # 3. Reverse the CFG to compute Post-Dominators
+        rev_cfg = cfg_nx.reverse()
+
+        # 4. Compute Dominance Frontiers on the Reverse CFG
+        # pdf[u] returns a set of nodes {v} such that 'u' is control-dependent on 'v'.
+        try:
+            pdf = nx.dominance_frontiers(rev_cfg, end_node)
+        except nx.NetworkXError as e:
+            print(f"[Warning] Post-Dominator calculation failed: {e}")
+            return cdg # Return empty/partial CDG if graph is fundamentally disjoint
+
+        # 5. Map Block-Level Dependencies to Instruction-Level Dependencies
+        for controlled_block, controlling_blocks in pdf.items():
+            if controlled_block.name in ("START", "END"): 
+                continue
                 
-                # Check for IF-ELSE pattern
-                jump_idx = idx + tgt - 1
-                if jump_idx < self.ir_length:
-                    jump_stmt, jump_tgt = self.irHandler.ir[jump_idx]
-                    # If the last instruction of the TRUE block is an unconditional jump forward
-                    if isinstance(jump_stmt, ChironAST.BoolFalse) and jump_tgt > 1:
-                        else_start = idx + tgt
-                        else_end = else_start + jump_tgt - 1
-                        for c_idx in range(else_start, else_end):
-                            if c_idx < self.ir_length:
-                                cdg.add_edge(idx, c_idx, label="Control")
-                                
-        print(f"CDG Built with {cdg.number_of_edges()} control dependency edges.\n")
+            for controlling_block in controlling_blocks:
+                if controlling_block.name in ("START", "END"): 
+                    continue
+                if not controlling_block.instrlist: 
+                    continue
+                
+                # The condition dictating control is the LAST instruction of the controlling block
+                branch_ir_idx = controlling_block.instrlist[-1][1]
+                
+                # ALL instructions in the controlled block depend on that branch
+                for stmt, controlled_ir_idx in controlled_block.instrlist:
+                    cdg.add_edge(branch_ir_idx, controlled_ir_idx, label="Control")
+
+        print(f"CDG Built natively with {cdg.number_of_edges()} formal control dependency edges.\n")
         return cdg
 
 
@@ -70,6 +92,9 @@ class ChironSlicer:
         slice_nodes = set()
         queue = list(start_nodes)
 
+        # Extract the executed program counters from the rich trace dictionaries
+        executed_pcs = {node['ir_pc'] for node in dynamic_trace} if dynamic_trace is not None else None
+
         # Mode 1: Slicing a specific Variable
         if target_var is not None:
             queue = []
@@ -86,8 +111,8 @@ class ChironSlicer:
             curr = queue.pop(0)
             if curr in slice_nodes: continue
             
-            # Dynamic Filter
-            if dynamic_trace is not None and curr not in dynamic_trace: continue
+            # Dynamic Filter (Use the extracted set!)
+            if executed_pcs is not None and curr not in executed_pcs: continue
 
             slice_nodes.add(curr)
 
@@ -114,7 +139,7 @@ class ChironSlicer:
         return self._traverse_slice([target_line], target_var=target_var, visual_targets=visual_targets, dynamic_trace=dynamic_trace)
 
     def get_union_slice(self, target_lines, dynamic_trace=None):
-        return self._traverse_slice(target_lines, dynamic_trace=dynamic_trace)
+        return self._traverse_slice(target_lines, visual_targets=target_lines, dynamic_trace=dynamic_trace)
 
     def get_forward_slice(self, target_line):
         """ Forward Taint Tracking (Unchanged) """
@@ -125,99 +150,203 @@ class ChironSlicer:
 
     def get_true_pen_state(self, current_ir_idx, dynamic_trace):
         """Scans the actual execution history to find the precise pen state."""
-        if dynamic_trace and current_ir_idx in dynamic_trace:
-            idx_in_trace = dynamic_trace.index(current_ir_idx)
-            # Scan backward through time!
-            for past_ir in reversed(dynamic_trace[:idx_in_trace]):
-                stmt = self.irHandler.ir[past_ir][0]
-                if isinstance(stmt, ChironAST.PenCommand):
-                    return stmt.status == "pendown"
+        if dynamic_trace:
+            # 1. Find the LAST occurrence of current_ir_idx in the trace
+            idx_in_trace = -1
+            for i in range(len(dynamic_trace) - 1, -1, -1):
+                if dynamic_trace[i]['ir_pc'] == current_ir_idx:
+                    idx_in_trace = i
+                    break
+            
+            # 2. Scan backward through time from that exact instance!
+            if idx_in_trace != -1:
+                for past_node in reversed(dynamic_trace[:idx_in_trace]):
+                    stmt = self.irHandler.ir[past_node['ir_pc']][0]
+                    if isinstance(stmt, ChironAST.PenCommand):
+                        return stmt.status == "pendown"
+        
         return True # Chiron default is pen down
+
+    
+    def get_dynamic_instance_slice(self, target_trace_ids, dynamic_trace):
+        """
+        Performs a true instance-level dynamic slice by sweeping backward 
+        through the chronological execution trace.
+        """
+        if not dynamic_trace:
+            return []
+
+        # We track slice inclusion by trace_id (execution instance), NOT static ir_pc
+        slice_trace_ids = set()
+        queue = list(target_trace_ids)
+        target_set = set(target_trace_ids)
+
+        while queue:
+            curr_id = queue.pop(0)
+            if curr_id in slice_trace_ids: 
+                continue
+                
+            slice_trace_ids.add(curr_id)
+            curr_node = dynamic_trace[curr_id]
+            curr_ir_pc = curr_node['ir_pc'] # Grab the static PC
+            needed_vars = curr_node['uses']
+
+            # --- THE ARCHITECTURAL DECOUPLING ---
+            # If this node is NOT the target (meaning it is a Spatial Ghost), 
+            # we delete its visual dependencies so it doesn't pull in irrelevant colors!
+            if curr_id not in target_set:
+                needed_vars = [v for v in needed_vars if v not in [":__pen_color", ":__pen_status"]]
+
+            # --- 1. THE LINEAR SWEEP (Data Dependencies) ---
+            for var in needed_vars:
+                # Scan backward in time starting from the instruction right before this one
+                for i in range(curr_id - 1, -1, -1):
+                    prev_node = dynamic_trace[i]
+                    if var in prev_node['defs']:
+                        queue.append(prev_node['trace_id'])
+                        break # We found the MOST RECENT definition. Stop looking backward.
+
+            # --- 2. THE CONTROL SWEEP (Post-Dominator Cross-Reference) ---
+            # Look at our static CDG to see if this instruction is governed by an If/While loop
+            if curr_ir_pc in self.cdg:
+                # Get all instructions that control the execution of this line
+                for controlling_pc, _ in self.cdg.in_edges(curr_ir_pc):
+                    # Scan backward in time to find the MOST RECENT execution of that condition
+                    for i in range(curr_id - 1, -1, -1):
+                        if dynamic_trace[i]['ir_pc'] == controlling_pc:
+                            queue.append(dynamic_trace[i]['trace_id'])
+                            break # Found the exact condition evaluation that let us execute!
+
+        # --- THE FIX: Convert and RETURN the slice! ---
+        static_ir_slice = set()
+        for t_id in slice_trace_ids:
+            static_ir_slice.add(dynamic_trace[t_id]['ir_pc'])
+
+        return sorted(list(static_ir_slice))
 
 
     # =========================================================================
     # --- VISUAL SLICING ENGINE (THE PEN-MUTING TRANSFORMATION) ---
     # =========================================================================
+    # =========================================================================
+    # --- VISUAL SLICING ENGINE (COMPILER-PURE AST TRANSFORMATION) ---
+    # =========================================================================
     def get_visual_slice_code(self, target_ir_indices, original_file_path, dynamic_trace=None):
+        import os
+        from antlr4 import FileStream, CommonTokenStream
+        from antlr4.TokenStreamRewriter import TokenStreamRewriter
+        from turtparse.tlangLexer import tlangLexer
+        from turtparse.tlangParser import tlangParser
+        
         slice_ir = self._traverse_slice(target_ir_indices, visual_targets=target_ir_indices, dynamic_trace=dynamic_trace)
         
         if not os.path.exists(original_file_path):
-            return ["[Error] Original source file not found for formatting."]
-            
-        with open(original_file_path, 'r') as f:
-            raw_code = f.readlines()
-            
-        output_code = []
-        line_to_ir = {}
+            return ["[Error] Original source file not found."]
+
+        # 1. Initialize ANTLR
+        input_stream = FileStream(original_file_path, encoding='utf-8')
+        lexer = tlangLexer(input_stream)
+        token_stream = CommonTokenStream(lexer)
+        token_stream.fill()
+        rewriter = TokenStreamRewriter(token_stream)
+
+        # 2. Build AST Node Sets via Parent Pointers
+        all_nodes = set()
+        for stmt, tgt in self.irHandler.ir:
+            node = getattr(stmt, 'ctx', None)
+            while node:
+                all_nodes.add(node)
+                node = node.parentCtx
+
+        alive_nodes = set()
         for ir_idx in slice_ir:
-            sl = getattr(self.irHandler.ir[ir_idx][0], 'sl', -1)
-            if sl != -1:
-                if sl not in line_to_ir: line_to_ir[sl] = set()
-                line_to_ir[sl].add(ir_idx)
-                
-        # --- Bracket Balancing ---
-        lines_to_add = set()
-        for sl in line_to_ir.keys():
-            if '[' in raw_code[sl-1]:
-                bracket_count = 0
-                for i in range(sl-1, len(raw_code)):
-                    bracket_count += raw_code[i].count('[')
-                    bracket_count -= raw_code[i].count(']')
-                    if bracket_count == 0:
-                        lines_to_add.add(i + 1)
-                        break
-        for new_sl in lines_to_add:
-            if new_sl not in line_to_ir:
-                line_to_ir[new_sl] = set() 
-        # -------------------------
-                
-        currently_muted = False
-                
-        for sl in sorted(list(line_to_ir.keys())):
-            original_text = raw_code[sl-1].rstrip()
-            
-            needs_muting = False
-            is_target = False
-            true_pen_down = True
-            
-            # THE FIX: Sort the IR indices chronologically!
-            for ir_idx in sorted(list(line_to_ir[sl])):
-                stmt = self.irHandler.ir[ir_idx][0]
-                
-                # Check for ink-depositing movements
-                if isinstance(stmt, ChironAST.GotoCommand) or (isinstance(stmt, ChironAST.MoveCommand) and stmt.direction in ["forward", "backward"]):
-                    if ir_idx in target_ir_indices: 
-                        is_target = True
-                    else: 
-                        needs_muting = True
-                        # THE FIX: Query the dynamic trace for the true state right before this ghost executed!
-                        true_pen_down = self.get_true_pen_state(ir_idx, dynamic_trace)
-                        
-            indent_str = " " * (len(original_text) - len(original_text.lstrip()))
-            line_prefix = f" [Line {sl:02d}] "
-            
-            if needs_muting and not is_target:
-                # Only inject muting if the dynamic trace confirmed the pen was actually DOWN
-                if true_pen_down and not currently_muted:
-                    output_code.append(f" [Injected] {indent_str}penup")
-                    currently_muted = True
-                output_code.append(f"{line_prefix}{original_text}")
+            stmt = self.irHandler.ir[ir_idx][0]
+            node = getattr(stmt, 'ctx', None)
+            while node:
+                alive_nodes.add(node)
+                node = node.parentCtx
+
+        # 3. Find the Highest Dead Nodes
+        highest_dead_nodes = set()
+        for node in all_nodes:
+            if node not in alive_nodes:
+                # If a node is dead, but its parent is ALIVE, this is the deletion boundary
+                if node.parentCtx is None or node.parentCtx in alive_nodes:
+                    highest_dead_nodes.add(node)
+
+        # 4. AST-Aware Elimination & Stubbing
+        for dead_node in highest_dead_nodes:
+            if isinstance(dead_node, tlangParser.Strict_ilistContext):
+                # The block is dead, but its parent (If/Loop) is alive! 
+                # Grammar requires at least one instruction here. We safely stub it.
+                rewriter.replaceRange(dead_node.start.tokenIndex, dead_node.stop.tokenIndex, "pause")
             else:
-                if currently_muted:
-                    # Deferred Unmuting
-                    if is_target:
-                        if original_text.strip() not in ["pendown", "penup"]:
-                            output_code.append(f" [Injected] {indent_str}pendown")
-                        currently_muted = False
-                    elif original_text.strip() in ["pendown", "penup"]:
-                        currently_muted = False 
-                        
-                output_code.append(f"{line_prefix}{original_text}")
-                
-        if currently_muted:
-            output_code.append(" [Injected] pendown")
+                # Completely safe to delete (e.g., an entire loop or an isolated instruction)
+                rewriter.replaceRange(dead_node.start.tokenIndex, dead_node.stop.tokenIndex, "")
+
+        # 5. Surgical Muting (Visual slice logic)
+        # 5. Surgical Muting (Visual slice logic)
+        alive_cmds = []
+        for ir_idx in slice_ir:
+            stmt = self.irHandler.ir[ir_idx][0]
+            # NEW: Add ChironAST.PenCommand to the tracking list
+            if isinstance(stmt, (ChironAST.GotoCommand, ChironAST.MoveCommand, ChironAST.PenCommand)):
+                if getattr(stmt, 'ctx', None):
+                    alive_cmds.append((stmt.ctx.start.tokenIndex, ir_idx, stmt))
+
+        # Process chronologically
+        alive_cmds.sort(key=lambda x: x[0])
+
+        currently_muted = False
+        for token_idx, ir_idx, stmt in alive_cmds:
+            if isinstance(stmt, ChironAST.PenCommand):
+                if stmt.status == "pendown": currently_muted = False
+                if stmt.status == "penup": currently_muted = True
+                continue
+
+            is_target = ir_idx in target_ir_indices
+            true_pen_down = self.get_true_pen_state(ir_idx, dynamic_trace) if dynamic_trace else True
             
-        return output_code
+            # --- THE FIX ---
+            # Don't inject pen states for non-drawing commands like 'left' and 'right'
+            is_drawing_cmd = isinstance(stmt, ChironAST.GotoCommand) or \
+                             (isinstance(stmt, ChironAST.MoveCommand) and stmt.direction in ["forward", "backward"])
+            
+            indent = " " * stmt.ctx.start.column
+
+            if is_drawing_cmd:
+                if not is_target:
+                    # Non-targets should always be muted (pen up)
+                    if true_pen_down and not currently_muted:
+                        rewriter.insertBeforeIndex(token_idx, f"penup\n{indent}")
+                        currently_muted = True
+                else:
+                    # Targets should match their TRUE execution state!
+                    if currently_muted and true_pen_down:
+                        rewriter.insertBeforeIndex(token_idx, f"pendown\n{indent}")
+                        currently_muted = False
+                    elif not currently_muted and not true_pen_down:
+                        rewriter.insertBeforeIndex(token_idx, f"penup\n{indent}")
+                        currently_muted = True
+
+        # 6. Final Extraction (Stripping the blank lines left by deleted nodes)
+        # 6. Final Extraction (Stripping blank lines and double pen states)
+        final_code = rewriter.getDefaultText().split('\n')
+        cleaned_code = []
+        for line in final_code:
+            line_str = line.strip()
+            if line_str == "": 
+                continue
+            
+            # Redundancy Filter: Skip consecutive pendowns or consecutive penups
+            if cleaned_code:
+                last_cmd = cleaned_code[-1].strip()
+                if last_cmd == "pendown" and line_str == "pendown": continue
+                if last_cmd == "penup" and line_str == "penup": continue
+                
+            cleaned_code.append(line)
+            
+        return cleaned_code
 
     def plot_graphs(self):
         # [Unchanged: Your graphing functions remain the same]

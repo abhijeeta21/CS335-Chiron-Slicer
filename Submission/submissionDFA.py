@@ -96,14 +96,12 @@ class MovementTransferFunction(TransferFunction):
                 
             elif isinstance(stmt, ChironAST.GotoCommand):
                 outState[":__position"] = MovementDomain({ir_idx})
-                outState[":__canvas"] = MovementDomain({ir_idx}) # Registers visual side-effect
                 
             elif isinstance(stmt, ChironAST.MoveCommand):
                 if stmt.direction in ["left", "right"]:
                     outState[":__heading"] = MovementDomain({ir_idx})
                 elif stmt.direction in ["forward", "backward"]:
                     outState[":__position"] = MovementDomain({ir_idx})
-                    outState[":__canvas"] = MovementDomain({ir_idx}) # Registers visual side-effect
 
         if len(currBB.instrlist) > 0 and isinstance(currBB.instrlist[-1][0], ChironAST.ConditionCommand):
             return [outState, outState]
@@ -183,7 +181,6 @@ def optimizeUsingDFA(irHandler):
 
                 # 3. State Updates
                 currentState[":__position"] = MovementDomain({current_idx})
-                currentState[":__canvas"] = MovementDomain({current_idx})
 
             elif isinstance(stmt, ChironAST.GotoCommand):
                 # Same split for Goto
@@ -200,7 +197,6 @@ def optimizeUsingDFA(irHandler):
                             ddg.add_edge(def_idx, current_idx, label=var, type="visual")
 
                 currentState[":__position"] = MovementDomain({current_idx})
-                currentState[":__canvas"] = MovementDomain({current_idx})
 
             else:
                 # Standard explicit variable Def-Use (Unchanged)

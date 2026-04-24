@@ -6,7 +6,9 @@ import turtle
 Release="Chiron v5.3"
 
 def addContext(s):
-    return str(s).strip().replace(":", "self.prg.")
+    s_str = str(s).strip().replace(":", "self.prg.")
+    # Map the Chiron pen condition to the native Python Turtle method
+    return s_str.replace("pendown?", "self.trtl.isdown()")
 
 class Interpreter:
     # Turtle program should not contain variable with names "ir", "pc", "t_screen"
@@ -174,4 +176,9 @@ class ConcreteInterpreter(Interpreter):
         xcor = addContext(stmt.xcor)
         ycor = addContext(stmt.ycor)
         exec("self.trtl.goto(%s, %s)" % (xcor, ycor))
+        return 1
+
+    def handlePauseCommand(self, stmt, tgt):
+        # A pause command does absolutely nothing, it just advances the PC
+        # print("  Pause Command (Stub)") 
         return 1
