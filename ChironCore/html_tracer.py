@@ -69,7 +69,8 @@ class HeadlessTracer:
                     self.trace_log.append({
                         'x1': self.x, 'y1': self.y, 'x2': new_x, 'y2': new_y,
                         'source_line': source_line, 'ir_pc': self.pc,
-                        'color': self.current_color
+                        'color': self.current_color,
+                        'trace_id': self.trace_counter
                     })
                 self.x, self.y = new_x, new_y
                 current_defs.append(":__position")

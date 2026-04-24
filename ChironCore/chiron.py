@@ -262,23 +262,34 @@ if __name__ == "__main__":
     # ==========================================================
     # --- PHASE 2: SEMANTIC COLOR EXTRACTION ---
     # ==========================================================
+    # ==========================================================
+    # --- PHASE 2: SEMANTIC COLOR EXTRACTION ---
+    # ==========================================================
     if args.extract_color:
         print(f"\n[COLOR EXTRACT] Extracting the '{args.extract_color}' sub-program...")
         import html_tracer
         tracer = html_tracer.HeadlessTracer(irHandler, args.params)
         tracer.run() # Run dynamic trace to find color bindings
         
-        # Find every MoveCommand that happened while the pen was this color
-        color_ir_pcs = [stroke['ir_pc'] for stroke in tracer.trace_log if stroke['color'] == args.extract_color]
+        # --- THE ARCHITECTURAL FIX: Use True Dynamic Instance IDs ---
+        # Instead of grabbing the static IR lines, we grab the chronological timeline IDs
+        target_trace_ids = [stroke['trace_id'] for stroke in tracer.trace_log if stroke['color'] == args.extract_color]
         
-        if not color_ir_pcs:
+        if not target_trace_ids:
             print(f"No shapes were drawn in {args.extract_color}.")
         else:
             slicer = ChironSlicer(irHandler)
             
-            # --- UPGRADE: Use the Pen-Muting Visual Slicer Engine ---
+            # Use the TRUE DYNAMIC engine to sweep backward in time, dodging the "Loop Trap"
+            color_slice_ir = slicer.get_dynamic_instance_slice(target_trace_ids, tracer.execution_path)
+            
+            # For the visual generator to know which lines to NOT mute, we still need the static IR target list
+            target_ir_pcs = list({stroke['ir_pc'] for stroke in tracer.trace_log if stroke['color'] == args.extract_color})
+            
+            # Pass it into the visual slicer engine
             color_slice_code = slicer.get_visual_slice_code(
-                target_ir_indices=color_ir_pcs, 
+                slice_ir=color_slice_ir,
+                target_ir_indices=target_ir_pcs, 
                 original_file_path=args.progfl, 
                 dynamic_trace=tracer.execution_path
             )
@@ -322,21 +333,17 @@ if __name__ == "__main__":
     # --- PHASE 2: STATIC SLICING EXECUTION ---
     # ==========================================================
     
-    # Backward Slicing execution (NOW SUPPORTS VISUAL ISOLATION)
+    # ==========================================================
+    # --- PHASE 2: STATIC SLICING EXECUTION ---
+    # ==========================================================
+    
     if args.slice_line is not None:
-        
-        if args.slice_var:
-            print(f"\n[BACKWARD SLICE] Mode 1: Tracing variable '{args.slice_var}' at Source Line {args.slice_line}...")
-        else:
-            print(f"\n[BACKWARD SLICE] Mode 2: Tracing full visual slice for Source Line {args.slice_line}...")
-            
         target_ir_indices = [idx for idx, (stmt, jmp) in enumerate(irHandler.ir) if getattr(stmt, 'sl', -1) == args.slice_line]
         
         if not target_ir_indices:
             print(f"[Error] Source Line {args.slice_line} not found, or it is not an executable instruction.")
         else:
             slicer = ChironSlicer(irHandler)
-            target_idx = target_ir_indices[0] 
             
             dynamic_trace = None
             if args.dynamic:
@@ -348,21 +355,28 @@ if __name__ == "__main__":
             # MODE 1: Variable Data Slice (Standard Mathematical Print)
             if args.slice_var:
                 print(f"\n[BACKWARD SLICE] Mode 1: Tracing variable '{args.slice_var}' at Source Line {args.slice_line}...")
-                backward_slice_ir = slicer.get_backward_slice(target_idx, args.slice_var, dynamic_trace=dynamic_trace)
                 
-                # Use the pen-muting engine to render the math slice visually
+                # We pass the FULL list of indices now
+                backward_slice_ir = slicer.get_backward_slice(target_ir_indices, args.slice_var, dynamic_trace=dynamic_trace)
+                
+                # Pass the isolated math slice into the visual engine
                 visual_slice_code = slicer.get_visual_slice_code(
-                    target_ir_indices=backward_slice_ir, 
+                    slice_ir=backward_slice_ir,
+                    target_ir_indices=target_ir_indices,
                     original_file_path=args.progfl,
                     dynamic_trace=dynamic_trace
                 )
                         
             # MODE 2: Visual Statement Slice
-                        
             else:
                 print(f"\n[BACKWARD SLICE] Mode 2: Tracing full visual slice for Source Line {args.slice_line}...")
+                
+                # Compute the full visual union slice first
+                full_slice_ir = slicer.get_union_slice(target_ir_indices, dynamic_trace=dynamic_trace)
+
                 visual_slice_code = slicer.get_visual_slice_code(
-                    target_ir_indices=[target_idx],
+                    slice_ir=full_slice_ir,
+                    target_ir_indices=target_ir_indices,
                     original_file_path=args.progfl,
                     dynamic_trace=dynamic_trace
                 )
@@ -391,6 +405,7 @@ if __name__ == "__main__":
                 for line in visual_slice_code:
                     print(line)
 
+                    
 # --- UPGRADED FORWARD SLICING (Triple-Mode Support) ---
     if args.forward_slice_var or args.forward_slice_line is not None:
         mode_desc = f"variable '{args.forward_slice_var}'" if args.forward_slice_var else f"Source Line {args.forward_slice_line}"
@@ -424,9 +439,19 @@ if __name__ == "__main__":
             elif args.forward_slice_line is not None:
                 print(f"[Error] Source line {args.forward_slice_line} not found or is not an executable instruction.")
         else:
+            # --- NEW: GENERATE DYNAMIC TRACE IF REQUESTED ---
+            dynamic_trace = None
+            if args.dynamic:
+                print(f"[*] Running dynamic execution trace for precise taint tracking...")
+                import html_tracer
+                tracer = html_tracer.HeadlessTracer(irHandler, args.params)
+                tracer.run()
+                dynamic_trace = tracer.execution_path
+
             forward_slice_ir = set()
             for start_idx in start_ir_indices:
-                forward_slice_ir.update(slicer.get_forward_slice(start_idx))
+                # Pass the trace into the slicer
+                forward_slice_ir.update(slicer.get_forward_slice(start_idx, dynamic_trace=dynamic_trace))
             
             source_lines = sorted(list(set(getattr(irHandler.ir[i][0], 'sl', -1) for i in forward_slice_ir)))
             source_lines = [l for l in source_lines if l != -1] 

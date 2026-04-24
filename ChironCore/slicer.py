@@ -134,18 +134,53 @@ class ChironSlicer:
 
 
     # In slicer.py
-    def get_backward_slice(self, target_line, target_var=None, dynamic_trace=None, visual_targets=None):
-        if target_line not in self.pdg: return []
-        return self._traverse_slice([target_line], target_var=target_var, visual_targets=visual_targets, dynamic_trace=dynamic_trace)
+    def get_backward_slice(self, target_lines, target_var=None, dynamic_trace=None, visual_targets=None):
+        # Prevent breaking existing code by wrapping a single integer in a list
+        if isinstance(target_lines, int): 
+            target_lines = [target_lines]
+            
+        valid_lines = [l for l in target_lines if l in self.pdg]
+        if not valid_lines: 
+            return []
+            
+        return self._traverse_slice(valid_lines, target_var=target_var, visual_targets=visual_targets, dynamic_trace=dynamic_trace)
 
     def get_union_slice(self, target_lines, dynamic_trace=None):
         return self._traverse_slice(target_lines, visual_targets=target_lines, dynamic_trace=dynamic_trace)
 
-    def get_forward_slice(self, target_line):
-        """ Forward Taint Tracking (Unchanged) """
-        if target_line not in self.pdg: return []
-        slice_nodes = nx.descendants(self.pdg, target_line)
-        slice_nodes.add(target_line)
+    def get_forward_slice(self, target_line, dynamic_trace=None):
+        """ Forward Taint Tracking (Upgraded with Dynamic Execution Filtering) """
+        if target_line not in self.pdg: 
+            return []
+            
+        # 1. Extract executed instructions if a dynamic trace is provided
+        executed_pcs = {node['ir_pc'] for node in dynamic_trace} if dynamic_trace is not None else None
+            
+        slice_nodes = set()
+        queue = [target_line]
+        
+        while queue:
+            curr = queue.pop(0)
+            if curr in slice_nodes: 
+                continue
+                
+            # --- THE DYNAMIC FILTER ---
+            # If dynamic mode is on, instantly drop branches that were never taken in reality
+            if executed_pcs is not None and curr not in executed_pcs:
+                continue
+                
+            slice_nodes.add(curr)
+            
+            # Traverse downstream (out_edges) to find affected instructions
+            for u, v, data in self.pdg.out_edges(curr, data=True):
+                edge_label = data.get('label', '')
+                
+                # The Visual Semantics Filter (Stop Spatial Cascades)
+                if edge_label in [':__position', ':__heading']:
+                    continue
+                
+                queue.append(v)
+                
         return sorted(list(slice_nodes))
 
     def get_true_pen_state(self, current_ir_idx, dynamic_trace):
@@ -231,14 +266,14 @@ class ChironSlicer:
     # =========================================================================
     # --- VISUAL SLICING ENGINE (COMPILER-PURE AST TRANSFORMATION) ---
     # =========================================================================
-    def get_visual_slice_code(self, target_ir_indices, original_file_path, dynamic_trace=None):
+    def get_visual_slice_code(self, slice_ir, target_ir_indices, original_file_path, dynamic_trace=None):
         import os
         from antlr4 import FileStream, CommonTokenStream
         from antlr4.TokenStreamRewriter import TokenStreamRewriter
         from turtparse.tlangLexer import tlangLexer
         from turtparse.tlangParser import tlangParser
         
-        slice_ir = self._traverse_slice(target_ir_indices, visual_targets=target_ir_indices, dynamic_trace=dynamic_trace)
+        # slice_ir = self._traverse_slice(target_ir_indices, visual_targets=target_ir_indices, dynamic_trace=dynamic_trace)
         
         if not os.path.exists(original_file_path):
             return ["[Error] Original source file not found."]
