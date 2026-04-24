@@ -326,7 +326,7 @@ if __name__ == "__main__":
             slicer_instance = ChironSlicer(irHandler)
             slicer_instance.plot_graphs()
         except Exception as e:
-            print(f"[Error plotting graphs]: {e}\n(Make sure you have matplotlib installed: 'pip install matplotlib')")
+            print(f"[Error plotting graphs]: {e}\n(Make sure you have pygraphviz installed: 'pip install pygraphviz')")
 
     # Backward Slicing execution (NOW SUPPORTS BOTH MODES)
     # ==========================================================
