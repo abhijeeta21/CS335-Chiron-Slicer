@@ -803,7 +803,52 @@ function renderSlicePanel(d) {{
     const ghostSet  = new Set(d.ghosts);
     const logicSet  = new Set(d.logic);
 
-    const allLines = [...new Set([...d.targets, ...d.ghosts, ...d.logic])].sort((a,b) => a-b);
+    let allLines = [...new Set([...d.targets, ...d.ghosts, ...d.logic])].sort((a,b) => a-b);
+
+    // ==========================================
+    // --- NEW: SYNTAX RESTORER ---
+    // ==========================================
+    let activeSet = new Set(allLines);
+    let openBlocks = [];
+    
+    for (let i = 0; i < totalLines; i++) {{
+        let txt = srcLines[i] ? srcLines[i].trim() : "";
+        let ln = i + 1;
+        
+        if (txt.endsWith('[')) {{
+            openBlocks.push(ln);
+        }} 
+        else if (txt === ']') {{
+            let startLn = openBlocks.pop();
+            if (!startLn) continue;
+            
+            // 1. If the block header (like 'if') is active, pull in its closing bracket
+            if (activeSet.has(startLn)) {{
+                activeSet.add(ln);
+                d.logic.push(ln); // Classify as logic so it gets the amber color
+            }}
+            
+            // 2. Special case for 'else [' 
+            // It has no IR instruction, so we check if any code INSIDE it is active
+            if (srcLines[startLn-1] && srcLines[startLn-1].trim().startsWith('else')) {{
+                let hasActiveChild = false;
+                for (let j = startLn + 1; j < ln; j++) {{
+                    if (activeSet.has(j)) hasActiveChild = true;
+                }}
+                // If the inside is active, light up both 'else [' and ']'
+                if (hasActiveChild) {{
+                    activeSet.add(startLn);
+                    activeSet.add(ln);
+                    d.logic.push(startLn);
+                    d.logic.push(ln);
+                }}
+            }}
+        }}
+    }}
+    
+    // Re-sort the lines now that the brackets are injected
+    allLines = [...activeSet].sort((a,b) => a-b);
+    // ==========================================
 
     if (allLines.length === 0) {{
         document.getElementById('slice-empty').style.display   = 'flex';
