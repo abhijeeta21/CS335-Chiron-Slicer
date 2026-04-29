@@ -99,6 +99,15 @@ class ChironSlicer:
         if target_var is not None:
             queue = []
             for start_node in start_nodes:
+                # ==========================================
+                # --- ADD THIS 4-LINE SAFETY GUARD ---
+                # ==========================================
+                if executed_pcs is not None and start_node not in executed_pcs:
+                    source_line = getattr(self.irHandler.ir[start_node][0], 'sl', '?')
+                    print(f"\n[Warning] Line {source_line} was never executed dynamically. Skipping.")
+                    continue
+                # ==========================================
+                
                 stmt = self.irHandler.ir[start_node][0]
                 is_def = isinstance(stmt, ChironAST.AssignmentCommand) and stmt.lvar.varname == target_var
                 for u, v, data in self.pdg.in_edges(start_node, data=True):
